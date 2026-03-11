@@ -21,6 +21,7 @@
   --text-md: clamp(1rem, 0.25vw + 0.95rem, 1.07rem);
   --text-lg: clamp(1.08rem, 0.48vw + 0.99rem, 1.2rem);
   --title-size: clamp(1.95rem, 3.25vw, 3.2rem);
+  --title-measure: 32ch;
   --section-size: clamp(1.7rem, 2.3vw, 2.35rem);
   --figure-title-size: clamp(1.15rem, 1.4vw + 0.95rem, 1.55rem);
 }
@@ -132,8 +133,8 @@ code {
 }
 
 .distill-header h1 {
-  width: min(100%, 78vw);
-  max-width: 100%;
+  width: min(100%, var(--title-measure));
+  max-width: var(--title-measure);
   margin: 0 auto;
   font-size: var(--title-size);
   font-weight: 600;
@@ -755,11 +756,11 @@ code {
   }
 
   .report-toc {
-    grid-column: auto;
-    justify-self: stretch;
-    width: 100%;
-    order: -1;
-    padding-top: 0;
+    display: none;
+  }
+
+  .report-main {
+    grid-column: 1;
   }
 
   .report-toc__links {
