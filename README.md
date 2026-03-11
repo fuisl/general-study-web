@@ -70,6 +70,8 @@ Import this repo in Vercel and use:
 - Build Command: `pnpm build:web`
 - Output Directory: `apps/web/out`
 
+The repo includes `vercel.json` with these same values so both Vercel UI deploys and GitHub Actions deploys use the same build/output settings.
+
 ### 2) Get Vercel IDs for GitHub Actions deploy
 
 Run locally once:
