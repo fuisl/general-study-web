@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CitationItem, FootnoteItem, ReportMeta, SourceItem } from "@repo/report-ui";
 
 export const reportMeta: ReportMeta = {
@@ -32,64 +34,7 @@ export const reportMeta: ReportMeta = {
   ],
 };
 
-export const citationItems: CitationItem[] = [
-  {
-    id: "fama-1970",
-    index: 1,
-    authors: "Fama, E. F.",
-    title: "Efficient Capital Markets: A Review of Theory and Empirical Work",
-    venue: "The Journal of Finance",
-    year: "1970",
-    note:
-      "A foundational reference for the debate over whether market prices already reflect available information.",
-    bibtex: `@article{fama1970efficient,
-  author = {Fama, Eugene F.},
-  title = {Efficient Capital Markets: A Review of Theory and Empirical Work},
-  journal = {The Journal of Finance},
-  year = {1970},
-  volume = {25},
-  number = {2},
-  pages = {383--417}
-}`,
-  },
-  {
-    id: "lim-2021",
-    index: 2,
-    authors: "Lim, B. and Zohren, S.",
-    title: "Time-Series Forecasting With Deep Learning: A Survey",
-    venue: "Philosophical Transactions of the Royal Society A",
-    year: "2021",
-    note:
-      "A survey summarizing how neural models are used for sequential prediction tasks and the tradeoffs they introduce.",
-    bibtex: `@article{lim2021timeseries,
-  author = {Lim, Bryan and Zohren, Stefan},
-  title = {Time-Series Forecasting With Deep Learning: A Survey},
-  journal = {Philosophical Transactions of the Royal Society A},
-  year = {2021},
-  volume = {379},
-  number = {2194},
-  pages = {20200209}
-}`,
-  },
-  {
-    id: "lundberg-2017",
-    index: 3,
-    authors: "Lundberg, S. M. and Lee, S.-I.",
-    title: "A Unified Approach to Interpreting Model Predictions",
-    venue: "Advances in Neural Information Processing Systems",
-    year: "2017",
-    note:
-      "The original SHAP paper that frames feature attribution through additive explanations and Shapley values.",
-    bibtex: `@inproceedings{lundberg2017unified,
-  author = {Lundberg, Scott M. and Lee, Su-In},
-  title = {A Unified Approach to Interpreting Model Predictions},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year = {2017},
-  pages = {4765--4774}
-}`,
-    href: "https://proceedings.neurips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html",
-  },
-];
+export const citationItems: CitationItem[] = loadCitationItems();
 
 export const footnoteItems: FootnoteItem[] = [
   {
@@ -124,3 +69,56 @@ export const sourceItems: SourceItem[] = [
     href: "https://distill.pub/guide/",
   },
 ];
+
+type BibEntry = {
+  fields: Record<string, string>;
+  key: string;
+};
+
+function loadCitationItems() {
+  const filePath = join(process.cwd(), "data", "references.bib");
+  const contents = readFileSync(filePath, "utf8");
+  return parseBibFile(contents).map((entry, index) => ({
+    id: entry.key,
+    index: index + 1,
+    authors: entry.fields.author ?? "",
+    title: entry.fields.title ?? entry.key,
+    detail: buildReferenceDetail(entry.fields),
+    year: entry.fields.year ?? "",
+    note: entry.fields.preview,
+    href: entry.fields.url,
+    linkLabel: entry.fields.linklabel ?? "link",
+  }));
+}
+
+function parseBibFile(contents: string) {
+  const entryPattern = /@\w+\s*\{\s*([^,]+),([\s\S]*?)\n\}/g;
+  const fieldPattern = /(\w+)\s*=\s*"([\s\S]*?)"\s*,?/g;
+  const entries: BibEntry[] = [];
+
+  for (const match of contents.matchAll(entryPattern)) {
+    const key = match[1].trim();
+    const body = match[2];
+    const fields: Record<string, string> = {};
+
+    for (const fieldMatch of body.matchAll(fieldPattern)) {
+      fields[fieldMatch[1].toLowerCase()] = fieldMatch[2].replace(/\s+/g, " ").trim();
+    }
+
+    entries.push({ fields, key });
+  }
+
+  return entries;
+}
+
+function buildReferenceDetail(fields: Record<string, string>) {
+  const source = fields.journal ?? fields.booktitle ?? fields.publisher ?? "";
+  const volume = fields.volume
+    ? `Vol. ${fields.volume}${fields.number ? `(${fields.number})` : ""}`
+    : "";
+  const pages = fields.pages ? `pp. ${fields.pages}` : "";
+  const doi = fields.doi ? `DOI: ${fields.doi}` : "";
+  const pieces = [fields.author, fields.year, source, volume, pages, doi].filter(Boolean);
+
+  return pieces.join(". ").replace(/\. pp\./g, ", pp.");
+}

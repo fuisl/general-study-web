@@ -7,9 +7,8 @@ import {
   InlineFootnote,
   ReferenceList,
   ReportShell,
-  SourceList,
 } from "@repo/report-ui";
-import { citationItems, footnoteItems, reportMeta, sourceItems } from "../data/report";
+import { citationItems, footnoteItems, reportMeta } from "../data/report";
 
 export function ReportArticle() {
   return (
@@ -443,17 +442,21 @@ export function ReportArticle() {
         </ul>
       </ArticleSection>
 
-      <ArticleSection
-        id="sources"
-        title="References and Notes"
-        lede="This template now includes compact inline citations, hover previews, and short footnotes. Replace the mocked entries below with your final references when the report is ready."
-      >
-        <ReferenceList items={citationItems} />
-        <h3>Notes</h3>
-        <FootnoteList items={footnoteItems} />
-        <h3>Template assets</h3>
-        <SourceList items={sourceItems} />
-      </ArticleSection>
+      <section className="backmatter l-page" id="sources">
+        <div className="backmatter__row">
+          <h2 className="backmatter__label">Footnotes</h2>
+          <div className="backmatter__content">
+            <FootnoteList items={footnoteItems} />
+          </div>
+        </div>
+
+        <div className="backmatter__row">
+          <h2 className="backmatter__label">References</h2>
+          <div className="backmatter__content">
+            <ReferenceList items={citationItems} />
+          </div>
+        </div>
+      </section>
 
       <ArticleSection
         id="conclusion"
