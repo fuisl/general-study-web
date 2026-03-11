@@ -5,12 +5,21 @@ export type TocItem = {
   label: string;
 };
 
+export type ReportAuthor = {
+  name: string;
+  studentId: string;
+};
+
 export type ReportMeta = {
-  kicker: string;
+  university: string;
+  department: string;
+  reportLabel: string;
   title: string;
   dek: string;
-  authors: string;
-  date: string;
+  authors: ReportAuthor[];
+  affiliation: string;
+  supervisor: string;
+  published: string;
   abstract: string;
   toc: TocItem[];
 };
@@ -46,30 +55,62 @@ type FigureFrameProps = {
 export function ReportShell({ meta, children }: ReportShellProps) {
   return (
     <article className="distill-shell">
-      <header className="distill-header l-page">
-        <p className="distill-kicker">{meta.kicker}</p>
-        <h1>{meta.title}</h1>
-        <p className="distill-dek">{meta.dek}</p>
-        <div className="distill-byline">
-          <div>
-            <span className="distill-byline__label">By</span>
-            <p>{meta.authors}</p>
+      <div className="report-frame">
+        <header className="distill-header">
+          <div className="distill-header__spacer" aria-hidden="true" />
+          <div className="distill-header__main">
+            <p className="distill-kicker">{meta.university}</p>
+            <p className="distill-subkicker">{meta.department}</p>
+            <p className="distill-report-label">{meta.reportLabel}</p>
+            <h1>{meta.title}</h1>
+            <p className="distill-dek">{meta.dek}</p>
           </div>
-          <div>
-            <span className="distill-byline__label">Published</span>
-            <p>{meta.date}</p>
+        </header>
+
+        <section className="distill-meta">
+          <div className="distill-meta__spacer" aria-hidden="true" />
+          <div className="distill-meta__grid">
+            <div className="distill-meta__column">
+              <span className="distill-byline__label">Authors</span>
+              {meta.authors.map((author) => (
+                <p key={author.studentId}>
+                  <strong>{author.name}</strong>
+                  <span>{author.studentId}</span>
+                </p>
+              ))}
+            </div>
+            <div className="distill-meta__column">
+              <span className="distill-byline__label">Affiliation</span>
+              <p>{meta.affiliation}</p>
+            </div>
+            <div className="distill-meta__column">
+              <span className="distill-byline__label">Supervisor</span>
+              <p>{meta.supervisor}</p>
+            </div>
+            <div className="distill-meta__column">
+              <span className="distill-byline__label">Published</span>
+              <p>{meta.published}</p>
+            </div>
           </div>
+        </section>
+
+        <div className="report-layout">
+          <aside className="report-toc" aria-label="Table of contents">
+            <h2>Contents</h2>
+            <nav className="report-toc__links">
+              {meta.toc.map((item) => (
+                <a href={`#${item.id}`} key={item.id}>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          </aside>
+          <main className="report-main">
+            <p className="distill-abstract l-body">{meta.abstract}</p>
+            {children}
+          </main>
         </div>
-        <p className="distill-abstract">{meta.abstract}</p>
-        <nav aria-label="Section links" className="distill-nav">
-          {meta.toc.map((item) => (
-            <a href={`#${item.id}`} key={item.id}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </header>
-      <main>{children}</main>
+      </div>
     </article>
   );
 }

@@ -12,19 +12,23 @@ type CsvFigureProps = {
   defaultX?: string;
   defaultY?: string;
   defaultColor?: string;
+  controls?: Array<"view" | "x" | "y" | "series">;
   label?: string;
+  showLegend?: boolean;
 };
 
 const ALL_SERIES = "__all__";
 const palette = ["#2457a6", "#2c7a7b", "#a4582f", "#6b4fb3", "#c17f16"];
 
 export function CsvFigure({
+  controls = ["view", "x", "y", "series"],
   src,
   defaultView = "line",
   defaultX,
   defaultY,
   defaultColor,
   label = "Interactive CSV chart",
+  showLegend = true,
 }: CsvFigureProps) {
   const [rows, setRows] = useState<CsvRow[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
@@ -144,9 +148,9 @@ export function CsvFigure({
         ? "line"
         : view;
 
-  const width = 860;
-  const height = 430;
-  const margin = { top: 28, right: 20, bottom: 58, left: 64 };
+  const width = 760;
+  const height = 390;
+  const margin = { top: 24, right: 18, bottom: 66, left: 58 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const xIsNumeric = numericColumns.includes(currentX);
@@ -173,8 +177,10 @@ export function CsvFigure({
     );
   }
 
-  const yMin = currentView === "bar" ? 0 : Math.min(...yValues);
-  const yMax = Math.max(...yValues);
+  const yMin =
+    currentView === "bar" ? Math.min(0, Math.min(...yValues)) : Math.min(...yValues);
+  const yMax =
+    currentView === "bar" ? Math.max(0, Math.max(...yValues)) : Math.max(...yValues);
   const [safeYMin, safeYMax] = normalizeExtent(yMin, yMax);
   const xNumericValues = rows
     .map((row) => toNumber(row[currentX]))
@@ -184,6 +190,8 @@ export function CsvFigure({
     xNumericValues.length ? Math.max(...xNumericValues) : 1,
   );
   const yTicks = buildTicks(safeYMin, safeYMax, 5);
+  const baselineY =
+    margin.top + plotHeight - scaleLinear(0, safeYMin, safeYMax, plotHeight);
   const numberFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   });
@@ -250,52 +258,62 @@ export function CsvFigure({
 
   return (
     <div className="csv-figure">
-      <div className="csv-figure__controls" role="group" aria-label="Chart controls">
-        <Control
-          label="View"
-          onChange={(nextValue) =>
-            setView(nextValue as "line" | "scatter" | "bar")
-          }
-          options={[
-            { label: "Line", value: "line" },
-            { label: "Scatter", value: "scatter", disabled: !xIsNumeric },
-            { label: "Bar", value: "bar" },
-          ]}
-          value={currentView}
-        />
-        <Control
-          label="X axis"
-          onChange={setXKey}
-          options={columns.map((column) => ({
-            label: column,
-            value: column,
-          }))}
-          value={currentX}
-        />
-        <Control
-          label="Y axis"
-          onChange={setYKey}
-          options={numericColumns.map((column) => ({
-            label: column,
-            value: column,
-          }))}
-          value={currentY}
-        />
-        <Control
-          label="Series"
-          onChange={setColorKey}
-          options={[
-            { label: "None", value: "" },
-            ...categoricalColumns
-              .filter((column) => column !== currentX)
-              .map((column) => ({
+      {controls.length ? (
+        <div className="csv-figure__controls" role="group" aria-label="Chart controls">
+          {controls.includes("view") ? (
+            <Control
+              label="View"
+              onChange={(nextValue) =>
+                setView(nextValue as "line" | "scatter" | "bar")
+              }
+              options={[
+                { label: "Line", value: "line" },
+                { label: "Scatter", value: "scatter", disabled: !xIsNumeric },
+                { label: "Bar", value: "bar" },
+              ]}
+              value={currentView}
+            />
+          ) : null}
+          {controls.includes("x") ? (
+            <Control
+              label="X axis"
+              onChange={setXKey}
+              options={columns.map((column) => ({
                 label: column,
                 value: column,
-              })),
-          ]}
-          value={currentColor}
-        />
-      </div>
+              }))}
+              value={currentX}
+            />
+          ) : null}
+          {controls.includes("y") ? (
+            <Control
+              label="Y axis"
+              onChange={setYKey}
+              options={numericColumns.map((column) => ({
+                label: column,
+                value: column,
+              }))}
+              value={currentY}
+            />
+          ) : null}
+          {controls.includes("series") ? (
+            <Control
+              label="Series"
+              onChange={setColorKey}
+              options={[
+                { label: "None", value: "" },
+                ...categoricalColumns
+                  .filter((column) => column !== currentX)
+                  .map((column) => ({
+                    label: column,
+                    value: column,
+                  })),
+              ]}
+              value={currentColor}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="csv-figure__canvas">
         <svg aria-label={label} className="csv-chart" role="img" viewBox={`0 0 ${width} ${height}`}>
@@ -318,8 +336,8 @@ export function CsvFigure({
             <line
               x1={margin.left}
               x2={width - margin.right}
-              y1={height - margin.bottom}
-              y2={height - margin.bottom}
+              y1={currentView === "bar" ? baselineY : height - margin.bottom}
+              y2={currentView === "bar" ? baselineY : height - margin.bottom}
             />
             <line
               x1={margin.left}
@@ -444,11 +462,12 @@ export function CsvFigure({
                 const step = plotWidth / Math.max(barData.length, 1);
                 const barWidth = Math.max(step * 0.7, 12);
                 const x = margin.left + index * step + (step - barWidth) / 2;
-                const top =
+                const valueY =
                   margin.top +
                   plotHeight -
                   scaleLinear(bar.value, safeYMin, safeYMax, plotHeight);
-                const heightValue = height - margin.bottom - top;
+                const top = Math.min(valueY, baselineY);
+                const heightValue = Math.max(Math.abs(baselineY - valueY), 1);
                 const isActive = inspectedRow?.[currentX] === bar.label;
 
                 return (
@@ -492,7 +511,7 @@ export function CsvFigure({
         </div>
       </div>
 
-      {currentColor && seriesNames.length ? (
+      {showLegend && currentColor && seriesNames.length ? (
         <div className="csv-figure__legend" role="group" aria-label="Series filter">
           <button
             className={`csv-legend-button${activeSeries === ALL_SERIES ? " is-active" : ""}`}
@@ -584,9 +603,12 @@ function renderXAxisLabels({
     });
   }
 
+  const shouldRotate = values.length > 6 || values.some((value) => value.length > 10);
+
   return values.map((value, index) => {
     const step = plotWidth / Math.max(values.length, 1);
     const x = margin.left + (index + 0.5) * step;
+    const y = margin.top + plotHeight + (shouldRotate ? 30 : 24);
 
     return (
       <g className="csv-axis" key={value}>
@@ -596,7 +618,12 @@ function renderXAxisLabels({
           y1={margin.top + plotHeight}
           y2={margin.top + plotHeight + 6}
         />
-        <text x={x} y={margin.top + plotHeight + 24}>
+        <text
+          textAnchor={shouldRotate ? "end" : "middle"}
+          transform={shouldRotate ? `translate(${x} ${y}) rotate(-32)` : undefined}
+          x={shouldRotate ? 0 : x}
+          y={shouldRotate ? 0 : y}
+        >
           {value}
         </text>
       </g>

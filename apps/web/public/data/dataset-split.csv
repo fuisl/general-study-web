@@ -1,0 +1,4 @@
+split,observations,windows
+Train,720,601
+Validation,240,121
+Test,240,121

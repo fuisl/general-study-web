@@ -1,0 +1,4 @@
+model,rmse,mae,mape
+Linear,3.82,2.93,4.82
+DLinear,3.21,2.45,4.07
+NLinear,2.74,2.07,3.48
