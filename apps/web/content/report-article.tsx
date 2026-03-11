@@ -1,11 +1,15 @@
 import {
   ArticleSection,
   CsvFigure,
+  FootnoteList,
   FigureFrame,
+  InlineCitation,
+  InlineFootnote,
+  ReferenceList,
   ReportShell,
   SourceList,
 } from "@repo/report-ui";
-import { reportMeta, sourceItems } from "../data/report";
+import { citationItems, footnoteItems, reportMeta, sourceItems } from "../data/report";
 
 export function ReportArticle() {
   return (
@@ -20,20 +24,23 @@ export function ReportArticle() {
           financial indicators, and expert interpretation. Machine learning adds
           another layer by detecting nonlinear patterns in large datasets, but it
           often introduces a tradeoff: a model can be accurate while still
-          remaining opaque.
+          remaining opaque.<InlineCitation item={citationItems[0]} />
         </p>
         <p>
           For finance students and practitioners, that opacity is a practical
           limitation. A model that predicts tomorrow&apos;s FPT price is only useful
           if the analyst can also explain which variables contributed to that
           forecast and whether those drivers make economic sense.
+          <InlineCitation item={citationItems[1]} />
         </p>
         <p>
-          This study therefore introduces SHAP, a widely used explainable-AI
-          technique that attributes part of a prediction to each input feature.
-          Using historical FPT-style stock data together with a synthetic gold
-          signal, we train several time-series forecasting models and interpret
-          them through SHAP.
+          This study therefore introduces <span className="inline-highlight">SHAP</span>,
+          a widely used explainable-AI technique that attributes part of a
+          prediction to each input feature.<InlineCitation item={citationItems[2]} />
+          Using historical FPT-style stock data together with a{" "}
+          <span className="inline-highlight">synthetic gold signal</span>
+          <InlineFootnote item={footnoteItems[0]} />, we train several
+          time-series forecasting models and interpret them through SHAP.
         </p>
         <ol className="article-list">
           <li>
@@ -438,14 +445,13 @@ export function ReportArticle() {
 
       <ArticleSection
         id="sources"
-        title="Sources"
-        lede="Replace these template references with your actual cleaned datasets, code repository, and methodological sources when the final report is ready."
+        title="References and Notes"
+        lede="This template now includes compact inline citations, hover previews, and short footnotes. Replace the mocked entries below with your final references when the report is ready."
       >
-        <p>
-          The current page uses synthetic CSV files solely to pre-populate the
-          layout and interactions. They are intended to be replaced by the real
-          outputs of your final experiment.
-        </p>
+        <ReferenceList items={citationItems} />
+        <h3>Notes</h3>
+        <FootnoteList items={footnoteItems} />
+        <h3>Template assets</h3>
         <SourceList items={sourceItems} />
       </ArticleSection>
 

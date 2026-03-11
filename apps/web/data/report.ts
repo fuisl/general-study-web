@@ -1,4 +1,4 @@
-import type { ReportMeta, SourceItem } from "@repo/report-ui";
+import type { CitationItem, FootnoteItem, ReportMeta, SourceItem } from "@repo/report-ui";
 
 export const reportMeta: ReportMeta = {
   university: "Vietnamese - German University",
@@ -27,10 +27,78 @@ export const reportMeta: ReportMeta = {
     { id: "results", label: "Results" },
     { id: "research-questions", label: "Research Question Analysis" },
     { id: "why-shap", label: "Why SHAP is Valuable for Finance" },
-    { id: "sources", label: "Sources" },
+    { id: "sources", label: "References and Notes" },
     { id: "conclusion", label: "Conclusion" },
   ],
 };
+
+export const citationItems: CitationItem[] = [
+  {
+    id: "fama-1970",
+    index: 1,
+    authors: "Fama, E. F.",
+    title: "Efficient Capital Markets: A Review of Theory and Empirical Work",
+    venue: "The Journal of Finance",
+    year: "1970",
+    note:
+      "A foundational reference for the debate over whether market prices already reflect available information.",
+    bibtex: `@article{fama1970efficient,
+  author = {Fama, Eugene F.},
+  title = {Efficient Capital Markets: A Review of Theory and Empirical Work},
+  journal = {The Journal of Finance},
+  year = {1970},
+  volume = {25},
+  number = {2},
+  pages = {383--417}
+}`,
+  },
+  {
+    id: "lim-2021",
+    index: 2,
+    authors: "Lim, B. and Zohren, S.",
+    title: "Time-Series Forecasting With Deep Learning: A Survey",
+    venue: "Philosophical Transactions of the Royal Society A",
+    year: "2021",
+    note:
+      "A survey summarizing how neural models are used for sequential prediction tasks and the tradeoffs they introduce.",
+    bibtex: `@article{lim2021timeseries,
+  author = {Lim, Bryan and Zohren, Stefan},
+  title = {Time-Series Forecasting With Deep Learning: A Survey},
+  journal = {Philosophical Transactions of the Royal Society A},
+  year = {2021},
+  volume = {379},
+  number = {2194},
+  pages = {20200209}
+}`,
+  },
+  {
+    id: "lundberg-2017",
+    index: 3,
+    authors: "Lundberg, S. M. and Lee, S.-I.",
+    title: "A Unified Approach to Interpreting Model Predictions",
+    venue: "Advances in Neural Information Processing Systems",
+    year: "2017",
+    note:
+      "The original SHAP paper that frames feature attribution through additive explanations and Shapley values.",
+    bibtex: `@inproceedings{lundberg2017unified,
+  author = {Lundberg, Scott M. and Lee, Su-In},
+  title = {A Unified Approach to Interpreting Model Predictions},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year = {2017},
+  pages = {4765--4774}
+}`,
+    href: "https://proceedings.neurips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html",
+  },
+];
+
+export const footnoteItems: FootnoteItem[] = [
+  {
+    id: "synthetic-signal",
+    index: 1,
+    text:
+      "The gold series used in this template is illustrative only. It exists to demonstrate how an external macro feature could be discussed before real experimental outputs are available.",
+  },
+];
 
 export const sourceItems: SourceItem[] = [
   {
