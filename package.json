@@ -1,0 +1,15 @@
+{
+  "name": "general-study-web",
+  "private": true,
+  "packageManager": "pnpm@10.32.0",
+  "scripts": {
+    "dev": "turbo run dev --filter=web",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=web",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.15",
+    "typescript": "^5.9.3"
+  }
+}
