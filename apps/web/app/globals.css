@@ -13,8 +13,8 @@
   --body-max: 39rem;
   --page-max: 53rem;
   --screen-max: 60rem;
-  --header-max: 50rem;
-  --meta-max: 50rem;
+  --header-max: min(80vw, 68rem);
+  --meta-max: min(78vw, 68rem);
   --text-xs: clamp(0.76rem, 0.16vw + 0.73rem, 0.84rem);
   --text-sm: clamp(0.91rem, 0.18vw + 0.88rem, 0.97rem);
   --text-md: clamp(1rem, 0.25vw + 0.95rem, 1.07rem);
@@ -93,6 +93,7 @@ code {
 }
 
 .distill-header__main {
+  width: min(100%, var(--header-max));
   max-width: var(--header-max);
   margin-inline: auto;
   min-width: 0;
@@ -130,17 +131,19 @@ code {
 }
 
 .distill-header h1 {
-  max-width: 14ch;
+  width: min(100%, 78vw);
+  max-width: 100%;
   margin: 0 auto;
   font-size: var(--title-size);
   font-weight: 600;
   line-height: 1.04;
   letter-spacing: -0.045em;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .distill-dek {
-  max-width: 42rem;
+  max-width: 48rem;
   margin: 0.75rem auto 0;
   color: #373737;
   font-size: var(--text-lg);
@@ -155,7 +158,7 @@ code {
 
 .distill-meta__grid {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.25fr) minmax(10rem, 1fr) minmax(9rem, 0.9fr) minmax(8rem, 0.75fr);
+  grid-template-columns: minmax(12rem, 1.2fr) minmax(16rem, 1.25fr) minmax(9rem, 0.9fr) minmax(8rem, 0.75fr);
   width: min(100%, var(--meta-max));
   margin-inline: auto;
   gap: 0.8rem 1rem;
@@ -164,6 +167,7 @@ code {
 
 .distill-meta__column {
   min-width: 0;
+  text-align: left;
 }
 
 .distill-meta__column p {
@@ -192,6 +196,11 @@ code {
 
 .distill-meta__column--authors p {
   margin-bottom: 0.6rem;
+}
+
+.distill-meta__column--affiliation p {
+  margin-bottom: 0.6rem;
+  white-space: nowrap;
 }
 
 .report-layout {
@@ -545,6 +554,10 @@ code {
 
   .distill-meta__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .distill-meta__column--affiliation p {
+    white-space: normal;
   }
 
   .report-toc {

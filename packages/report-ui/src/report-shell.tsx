@@ -77,9 +77,11 @@ export function ReportShell({ meta, children }: ReportShellProps) {
                 </p>
               ))}
             </div>
-            <div className="distill-meta__column">
+            <div className="distill-meta__column distill-meta__column--affiliation">
               <span className="distill-byline__label">Affiliation</span>
-              <p>{meta.affiliation}</p>
+              {meta.authors.map((author) => (
+                <p key={`affiliation-${author.studentId}`}>{meta.affiliation}</p>
+              ))}
             </div>
             <div className="distill-meta__column">
               <span className="distill-byline__label">Supervisor</span>
