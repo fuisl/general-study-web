@@ -12,7 +12,7 @@ export function ReportArticle() {
     <ReportShell meta={reportMeta}>
       <ArticleSection
         id="introduction"
-        title="1. Introduction"
+        title="Introduction"
         lede="Stock-price prediction is a familiar financial problem, but model accuracy alone is not enough when the goal is to understand why a forecast changes. This report therefore combines forecasting with explainability."
       >
         <p>
@@ -72,10 +72,10 @@ export function ReportArticle() {
 
       <ArticleSection
         id="background"
-        title="2. Background Concepts"
+        title="Background Concepts"
         lede="The forecasting task combines conventional technical indicators with simple but effective sequence models. The goal is not to use the most complex architecture, but to build a model that is accurate enough to be worth explaining."
       >
-        <h3>2.1. Technical Indicators in Finance</h3>
+        <h3>Technical Indicators in Finance</h3>
         <p>
           The input space begins with common stock-market variables such as open,
           high, low, close, and trading volume. From these raw values, the study
@@ -108,7 +108,7 @@ export function ReportArticle() {
         />
       </FigureFrame>
 
-      <ArticleSection title="2.2. Machine Learning for Time-Series Forecasting" id="background-ml">
+      <ArticleSection title="Machine Learning for Time-Series Forecasting" id="background-ml">
         <p>
           Financial markets generate sequential data, so each day&apos;s observation
           depends on what came before it. This makes time-series forecasting
@@ -150,7 +150,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="shap"
-        title="3. Explainable AI and SHAP"
+        title="Explainable AI and SHAP"
         lede="The interpretability problem appears as soon as a model can produce a plausible forecast without revealing why the prediction changed. SHAP addresses that gap by turning each prediction into a set of feature contributions."
       >
         <p>
@@ -191,7 +191,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="data"
-        title="4. Data Collection and Processing"
+        title="Data Collection and Processing"
         lede="The dataset used in this report follows the same structure as a conventional market CSV: date, open, high, low, close, and volume, followed by engineered technical and context features."
       >
         <p>
@@ -234,7 +234,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="applying-shap"
-        title="5. Applying SHAP to the Model"
+        title="Applying SHAP to the Model"
         lede="After training the forecasting models, the study focuses on the best-performing NLinear specification and applies SHAP to explain the model at both local and global levels."
       >
         <p>
@@ -276,7 +276,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="interpreting"
-        title="6. Interpreting SHAP Values"
+        title="Interpreting SHAP Values"
         lede="SHAP values can be aggregated across samples, forecast horizons, or feature groups. In this report, the most useful summaries are lag importance and overall feature importance."
       >
         <p>
@@ -311,7 +311,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="results"
-        title="7. Results"
+        title="Results"
         lede="This section reports synthetic template results for layout purposes. The numbers are not empirical findings, but they are chosen to behave like a plausible forecasting experiment."
       >
         <p>
@@ -363,10 +363,10 @@ export function ReportArticle() {
 
       <ArticleSection
         id="research-questions"
-        title="8. Research Question Analysis"
+        title="Research Question Analysis"
         lede="The two research questions can now be answered using the model metrics, lag patterns, and SHAP summaries shown above."
       >
-        <h3>RQ1. Using SHAP to identify important features</h3>
+        <h3>Using SHAP to identify important features</h3>
         <p>
           SHAP provides a systematic way to quantify which features move a
           prediction. In this project, the values are computed on the trained
@@ -380,7 +380,7 @@ export function ReportArticle() {
           returns dominate the explanation. This means the model behaves like a
           momentum-sensitive forecaster rather than a feature-agnostic black box.
         </p>
-        <h3>RQ2. Can gold price be used as an indicator?</h3>
+        <h3>Can gold price be used as an indicator?</h3>
         <p>
           Gold does not become the dominant explanatory factor, but it does not
           disappear either. In the synthetic SHAP ranking, gold return sits in
@@ -414,7 +414,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="why-shap"
-        title="10. Why SHAP is Valuable for Finance"
+        title="Why SHAP is Valuable for Finance"
         lede="Finance is rarely interested in prediction alone. Analysts also need to explain what moved the model and whether the explanation matches a plausible market story."
       >
         <p>
@@ -451,7 +451,7 @@ export function ReportArticle() {
 
       <ArticleSection
         id="conclusion"
-        title="11. Conclusion"
+        title="Conclusion"
         lede="The main contribution of this report is not just a forecast, but a forecast that can be interrogated."
       >
         <p>

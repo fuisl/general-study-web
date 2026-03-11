@@ -57,7 +57,6 @@ export function ReportShell({ meta, children }: ReportShellProps) {
     <article className="distill-shell">
       <div className="report-frame">
         <header className="distill-header">
-          <div className="distill-header__spacer" aria-hidden="true" />
           <div className="distill-header__main">
             <p className="distill-kicker">{meta.university}</p>
             <p className="distill-subkicker">{meta.department}</p>
@@ -68,9 +67,8 @@ export function ReportShell({ meta, children }: ReportShellProps) {
         </header>
 
         <section className="distill-meta">
-          <div className="distill-meta__spacer" aria-hidden="true" />
           <div className="distill-meta__grid">
-            <div className="distill-meta__column">
+            <div className="distill-meta__column distill-meta__column--authors">
               <span className="distill-byline__label">Authors</span>
               {meta.authors.map((author) => (
                 <p key={author.studentId}>
