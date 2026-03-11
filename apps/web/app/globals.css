@@ -14,7 +14,8 @@
   --page-max: 53rem;
   --screen-max: 60rem;
   --header-max: min(80vw, 68rem);
-  --meta-max: min(78vw, 68rem);
+  --meta-max: min(72vw, 58rem);
+  --shell-max: 58rem;
   --text-xs: clamp(0.76rem, 0.16vw + 0.73rem, 0.84rem);
   --text-sm: clamp(0.91rem, 0.18vw + 0.88rem, 0.97rem);
   --text-md: clamp(1rem, 0.25vw + 0.95rem, 1.07rem);
@@ -83,8 +84,8 @@ code {
 
 .report-layout {
   display: grid;
-  grid-template-columns: minmax(12rem, var(--toc-width)) minmax(0, 1fr);
-  gap: var(--layout-gap);
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--shell-max)) minmax(0, 1fr);
+  column-gap: var(--layout-gap);
 }
 
 .distill-header {
@@ -158,11 +159,12 @@ code {
 
 .distill-meta__grid {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.2fr) minmax(16rem, 1.25fr) minmax(9rem, 0.9fr) minmax(8rem, 0.75fr);
+  grid-template-columns: 14rem 16rem 10rem 8rem;
   width: min(100%, var(--meta-max));
   margin-inline: auto;
   gap: 0.8rem 1rem;
   align-items: start;
+  justify-content: center;
 }
 
 .distill-meta__column {
@@ -171,15 +173,11 @@ code {
 }
 
 .distill-meta__column p {
-  margin: 0 0 0.55rem;
+  margin: 0;
   color: #303030;
   font-family: var(--font-sans), sans-serif;
   font-size: 0.92rem;
   line-height: 1.35;
-}
-
-.distill-meta__column p:last-child {
-  margin-bottom: 0;
 }
 
 .distill-meta__column strong {
@@ -194,12 +192,18 @@ code {
   font-size: 0.83rem;
 }
 
-.distill-meta__column--authors p {
-  margin-bottom: 0.6rem;
+.distill-meta__entries {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.distill-meta__entry {
+  min-height: 3.4rem;
+  display: flex;
+  align-items: flex-start;
 }
 
 .distill-meta__column--affiliation p {
-  margin-bottom: 0.6rem;
   white-space: nowrap;
 }
 
@@ -209,6 +213,9 @@ code {
 }
 
 .report-toc {
+  grid-column: 1;
+  justify-self: end;
+  width: min(100%, var(--toc-width));
   min-width: 0;
   padding-top: 0.1rem;
 }
@@ -237,6 +244,8 @@ code {
 }
 
 .report-main {
+  grid-column: 2;
+  width: 100%;
   min-width: 0;
   display: grid;
   justify-items: center;
@@ -554,6 +563,7 @@ code {
 
   .distill-meta__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 42rem);
   }
 
   .distill-meta__column--affiliation p {
@@ -561,6 +571,9 @@ code {
   }
 
   .report-toc {
+    grid-column: auto;
+    justify-self: stretch;
+    width: 100%;
     order: -1;
     padding-top: 0;
   }
@@ -586,6 +599,10 @@ code {
   .distill-meta__grid,
   .report-toc__links {
     grid-template-columns: 1fr;
+  }
+
+  .distill-meta__entry {
+    min-height: auto;
   }
 
   .l-body,
