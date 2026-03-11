@@ -49,12 +49,51 @@ The example article uses a client-side CSV figure so the site stays statically e
 
 Use tidy CSVs when possible: one row per observation, one column per variable. That keeps the chart controls simple.
 
-## Vercel
+## GitHub Actions CI/CD
 
-The app already uses `output: "export"` in Next.js, so it can be hosted as static files.
+The pipeline is defined in [ci-cd.yml](/Users/fuisloy/general-study-web/.github/workflows/ci-cd.yml).
 
-- Install Command: `pnpm install`
+- On `pull_request` to `main`: runs `pnpm typecheck` and `pnpm build:web`
+- On `push` to `main`: runs CI, then deploys to Vercel (if secrets are set)
+- Manual run is also supported via `workflow_dispatch`
+
+## Vercel Free Hosting Setup
+
+The app already uses `output: "export"` in Next.js, so Vercel free hosting works well.
+
+### 1) Create the Vercel project
+
+Import this repo in Vercel and use:
+
+- Framework Preset: `Other`
+- Install Command: `pnpm install --frozen-lockfile`
 - Build Command: `pnpm build:web`
 - Output Directory: `apps/web/out`
 
-This works on Vercel's free hosting and still keeps Turborepo in the build path.
+### 2) Get Vercel IDs for GitHub Actions deploy
+
+Run locally once:
+
+```bash
+pnpm dlx vercel login
+pnpm dlx vercel link
+cat .vercel/project.json
+```
+
+Copy `orgId` and `projectId` from `.vercel/project.json`.
+
+### 3) Add GitHub repository secrets
+
+In GitHub: `Settings -> Secrets and variables -> Actions`, add:
+
+- `VERCEL_TOKEN` (create in Vercel: Account Settings -> Tokens)
+- `VERCEL_ORG_ID` (from `.vercel/project.json`)
+- `VERCEL_PROJECT_ID` (from `.vercel/project.json`)
+
+### 4) Deploy flow
+
+- Push to `main`
+- GitHub Actions runs CI
+- If CI passes, the workflow runs `vercel pull`, `vercel build`, and `vercel deploy --prebuilt` for production
+
+If the three Vercel secrets are missing, CI still runs and deploy is skipped.
