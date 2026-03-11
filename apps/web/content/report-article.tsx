@@ -442,22 +442,6 @@ export function ReportArticle() {
         </ul>
       </ArticleSection>
 
-      <section className="backmatter l-page" id="sources">
-        <div className="backmatter__row">
-          <h2 className="backmatter__label">Footnotes</h2>
-          <div className="backmatter__content">
-            <FootnoteList items={footnoteItems} />
-          </div>
-        </div>
-
-        <div className="backmatter__row">
-          <h2 className="backmatter__label">References</h2>
-          <div className="backmatter__content">
-            <ReferenceList items={citationItems} />
-          </div>
-        </div>
-      </section>
-
       <ArticleSection
         id="conclusion"
         title="Conclusion"
@@ -479,6 +463,22 @@ export function ReportArticle() {
           explanations exported from your training pipeline.
         </p>
       </ArticleSection>
+
+      <section className="backmatter l-page" id="sources">
+        <div className="backmatter__row">
+          <h2 className="backmatter__label">Footnotes</h2>
+          <div className="backmatter__content">
+            <FootnoteList items={footnoteItems} />
+          </div>
+        </div>
+
+        <div className="backmatter__row">
+          <h2 className="backmatter__label">References</h2>
+          <div className="backmatter__content">
+            <ReferenceList items={citationItems} />
+          </div>
+        </div>
+      </section>
     </ReportShell>
   );
 }

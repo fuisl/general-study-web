@@ -11,7 +11,7 @@ export const reportMeta: ReportMeta = {
   authors: [
     { name: "Bui Duc Xuan", studentId: "10422085" },
     { name: "Truong Hao Nhien", studentId: "10422062" },
-    { name: "Tran Hai Duong", studentId: "10422050" },
+    { name: "Tran Hai Duong", studentId: "10422021" },
   ],
   affiliation: "Vietnamese - German University",
   supervisor: "Dr. Dinh Hai Dung",
