@@ -1,0 +1,4 @@
+model,mean_abs_shap,rank,positive_share,negative_share,mean_shap
+RandomForest,0.020109,3,0.841867,0.158133,0.000436
+XGBoost,0.053716,7,0.636295,0.363705,-0.001372
+LightGBM,0.057058,11,0.625753,0.374247,0.000582

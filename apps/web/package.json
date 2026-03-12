@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "prepare:data": "node scripts/prepare-report-data.mjs",
+    "dev": "node scripts/prepare-report-data.mjs && next dev",
+    "build": "node scripts/prepare-report-data.mjs && next build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

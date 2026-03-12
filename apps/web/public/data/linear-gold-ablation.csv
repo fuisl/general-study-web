@@ -1,0 +1,19 @@
+model,feature,status
+Linear,return_1d,2
+Linear,price level,1
+Linear,moving averages,1
+Linear,volume flow,1
+Linear,volatility,1
+Linear,gold_return,0
+DLinear,return_1d,2
+DLinear,price level,1
+DLinear,moving averages,1
+DLinear,volume flow,1
+DLinear,volatility,1
+DLinear,gold_return,0
+NLinear,return_1d,2
+NLinear,price level,1
+NLinear,moving averages,1
+NLinear,volume flow,1
+NLinear,volatility,1
+NLinear,gold_return,0

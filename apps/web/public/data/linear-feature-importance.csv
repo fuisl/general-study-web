@@ -1,0 +1,11 @@
+feature,importance
+NLinear · 7d · L4,0.098179
+NLinear · 7d · L1,0.089746
+NLinear · 7d · L6,0.086042
+NLinear · 7d · L7,0.075078
+NLinear · 7d · L2,0.070906
+NLinear · 7d · L3,0.06503
+NLinear · 480d · L480,0.057513
+DLinear · 480d · L440,0.046965
+Linear · 480d · L440,0.046762
+NLinear · 480d · L440,0.042649

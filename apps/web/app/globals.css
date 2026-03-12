@@ -12,7 +12,8 @@
   --layout-gap: clamp(1.25rem, 2vw, 2rem);
   --body-max: 39rem;
   --page-max: 53rem;
-  --screen-max: 60rem;
+  --screen-max: 68rem;
+  --figure-breakout-extra: clamp(8rem, 12vw, 16rem);
   --header-max: min(80vw, 68rem);
   --meta-max: min(72vw, 58rem);
   --shell-max: 58rem;
@@ -272,9 +273,10 @@ code {
 
 .distill-abstract {
   margin: 0 0 1.8rem;
-  color: #3e3e3e;
-  font-size: var(--text-md);
-  line-height: 1.7;
+  color: #565656;
+  font-size: var(--text-sm);
+  font-style: italic;
+  line-height: 1.64;
 }
 
 .article-section {
@@ -423,9 +425,24 @@ code {
   transform: translateY(0);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .figure-frame {
+  width: min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem));
   margin-top: 2.5rem;
   margin-bottom: 0.6rem;
+  margin-left: calc(50% - min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem)) / 2);
+  margin-right: calc(50% - min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem)) / 2);
   padding: 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
@@ -455,6 +472,119 @@ code {
 .csv-figure {
   display: grid;
   gap: 0.85rem;
+}
+
+.interactive-table {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.interactive-table__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.interactive-table__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.interactive-table__chip {
+  padding: 0.38rem 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.interactive-table__chip.is-active {
+  border-color: rgba(36, 87, 166, 0.24);
+  background: rgba(36, 87, 166, 0.09);
+  color: var(--ink);
+}
+
+.interactive-table__search {
+  min-width: min(18rem, 100%);
+  margin-left: auto;
+}
+
+.interactive-table__search input {
+  width: 100%;
+  padding: 0.5rem 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.84rem;
+}
+
+.interactive-table__frame {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+
+.interactive-table__table {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: collapse;
+}
+
+.interactive-table__table th,
+.interactive-table__table td {
+  padding: 0.72rem 0.82rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  vertical-align: top;
+  text-align: left;
+}
+
+.interactive-table__table th {
+  color: var(--muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.interactive-table__table td {
+  color: #373737;
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.interactive-table__table tr:last-child td {
+  border-bottom: 0;
+}
+
+.interactive-table__table .is-end {
+  text-align: right;
+}
+
+.interactive-table__empty {
+  color: var(--muted);
+  text-align: center;
+}
+
+.interactive-table__summary {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.76rem;
 }
 
 .csv-figure__controls {
@@ -525,12 +655,27 @@ code {
 .csv-line {
   fill: none;
   stroke-width: 2;
+  transition:
+    opacity 160ms ease,
+    stroke 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.csv-line.is-focused {
+  opacity: 1;
+}
+
+.csv-line.is-muted {
+  opacity: 0.28;
 }
 
 .csv-point,
 .csv-bar {
   cursor: pointer;
-  transition: opacity 140ms ease;
+  transition:
+    opacity 140ms ease,
+    fill 140ms ease,
+    r 140ms ease;
 }
 
 .csv-point {
@@ -539,9 +684,36 @@ code {
   stroke-width: 1.5;
 }
 
+.csv-point.is-focused {
+  opacity: 0.95;
+}
+
+.csv-point.is-muted {
+  opacity: 0.25;
+}
+
 .csv-point.is-active,
 .csv-bar.is-active {
   opacity: 1;
+}
+
+.csv-point-target {
+  fill: transparent;
+  stroke: transparent;
+}
+
+.csv-point-label {
+  fill: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  text-anchor: start;
 }
 
 .csv-bar {
@@ -601,6 +773,173 @@ code {
   background: var(--surface);
   color: var(--muted);
   font-family: var(--font-sans), sans-serif;
+}
+
+.ranked-bar-figure,
+.heatmap-figure,
+.small-multiples-figure,
+.timeline-figure {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.heatmap-figure {
+  position: relative;
+}
+
+.ranked-bar-chart,
+.heatmap-chart,
+.small-multiples-chart,
+.timeline-chart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ranked-bar__grid line,
+.timeline-chart__grid line {
+  stroke: #eaeaea;
+  stroke-width: 1;
+}
+
+.ranked-bar__grid text,
+.heatmap-chart__label,
+.heatmap-chart__value,
+.timeline-chart__grid text,
+.timeline-chart__label,
+.timeline-chart__value {
+  fill: var(--muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+}
+
+.ranked-bar__label,
+.timeline-chart__label {
+  text-anchor: end;
+}
+
+.ranked-bar__baseline {
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 1.2;
+}
+
+.ranked-bar-figure__legend {
+  justify-content: center;
+}
+
+.ranked-bar__bar,
+.heatmap-chart__cell,
+.timeline-chart__bar {
+  cursor: pointer;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.ranked-bar__bar {
+  opacity: 0.9;
+}
+
+.ranked-bar__bar.is-active,
+.heatmap-chart__cell.is-active,
+.timeline-chart__bar.is-active {
+  opacity: 1;
+}
+
+.ranked-bar__value {
+  fill: #404040;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+  dominant-baseline: middle;
+  text-anchor: start;
+}
+
+.heatmap-chart__label {
+  text-anchor: middle;
+}
+
+.heatmap-chart__label--column {
+  font-size: 9px;
+  letter-spacing: -0.01em;
+}
+
+.heatmap-chart__label--row {
+  text-anchor: end;
+}
+
+.heatmap-chart__value {
+  fill: #2d2d2d;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.heatmap-figure__frame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.heatmap-chart {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.heatmap-figure__tooltip {
+  position: fixed;
+  z-index: 20;
+  min-width: 10rem;
+  max-width: 14rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  color: #3a3a3a;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.heatmap-figure__tooltip strong {
+  color: var(--ink);
+}
+
+.timeline-chart__bar {
+  fill: rgba(36, 87, 166, 0.82);
+}
+
+.timeline-chart__value {
+  fill: #404040;
+}
+
+.small-multiples-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.small-multiples-card {
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+
+.small-multiples-card__header {
+  margin-bottom: 0.35rem;
+  color: #3a3a3a;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.small-multiples-card__header strong {
+  font-weight: 600;
 }
 
 .source-list {
@@ -797,7 +1136,14 @@ code {
   }
 
   .figure-frame {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
     padding: 0.75rem;
+  }
+
+  .small-multiples-grid {
+    grid-template-columns: 1fr;
   }
 
   .csv-figure__canvas {

@@ -13,7 +13,30 @@ type CsvFigureProps = {
   defaultY?: string;
   defaultColor?: string;
   controls?: Array<"view" | "x" | "y" | "series">;
+  chartConfig?: {
+    activePointRadius?: number;
+    height?: number;
+    lineWidth?: number;
+    maxXTicks?: number;
+    maxYTicks?: number;
+    pointRadius?: number;
+    rotateXLabels?: boolean;
+    showPoints?: boolean;
+    width?: number;
+    xTickFormat?: "raw" | "ym" | "ymd-short";
+  };
   label?: string;
+  seriesStyleMap?: Record<
+    string,
+    {
+      color?: string;
+      drawOrder?: number;
+      legendOrder?: number;
+      lineWidth?: number;
+      mutedColor?: string;
+      pointColor?: string;
+    }
+  >;
   showLegend?: boolean;
 };
 
@@ -21,6 +44,7 @@ const ALL_SERIES = "__all__";
 const palette = ["#2457a6", "#2c7a7b", "#a4582f", "#6b4fb3", "#c17f16"];
 
 export function CsvFigure({
+  chartConfig,
   controls = ["view", "x", "y", "series"],
   src,
   defaultView = "line",
@@ -28,6 +52,7 @@ export function CsvFigure({
   defaultY,
   defaultColor,
   label = "Interactive CSV chart",
+  seriesStyleMap,
   showLegend = true,
 }: CsvFigureProps) {
   const [rows, setRows] = useState<CsvRow[]>([]);
@@ -39,6 +64,7 @@ export function CsvFigure({
   const [yKey, setYKey] = useState(defaultY ?? "");
   const [colorKey, setColorKey] = useState(defaultColor ?? "");
   const [activeSeries, setActiveSeries] = useState(ALL_SERIES);
+  const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
   const [inspectedRow, setInspectedRow] = useState<CsvRow | null>(null);
 
   useEffect(() => {
@@ -123,6 +149,7 @@ export function CsvFigure({
 
   useEffect(() => {
     setActiveSeries(ALL_SERIES);
+    setHoveredSeries(null);
     setInspectedRow(null);
   }, [colorKey, view, xKey, yKey]);
 
@@ -148,18 +175,29 @@ export function CsvFigure({
         ? "line"
         : view;
 
-  const width = 760;
-  const height = 390;
+  const width = chartConfig?.width ?? 760;
+  const height = chartConfig?.height ?? 390;
   const margin = { top: 24, right: 18, bottom: 66, left: 58 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const xIsNumeric = numericColumns.includes(currentX);
   const seriesNames = currentColor ? uniqueValues(rows, currentColor) : [];
-  const visibleSeries =
-    currentColor && activeSeries !== ALL_SERIES ? [activeSeries] : seriesNames;
+  const sortedSeriesNames = [...seriesNames].sort((left, right) => {
+    const leftLegendOrder = getSeriesStyle(left).legendOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightLegendOrder = getSeriesStyle(right).legendOrder ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftLegendOrder !== rightLegendOrder) {
+      return leftLegendOrder - rightLegendOrder;
+    }
+
+    return seriesNames.indexOf(left) - seriesNames.indexOf(right);
+  });
+  const focusedSeries =
+    hoveredSeries ?? (currentColor && activeSeries !== ALL_SERIES ? activeSeries : null);
+  const visibleSeries = sortedSeriesNames;
   const xCategories = uniqueValues(rows, currentX);
   const filteredRows =
-    currentColor && activeSeries !== ALL_SERIES
+    currentView === "bar" && currentColor && activeSeries !== ALL_SERIES
       ? rows.filter((row) => row[currentColor] === activeSeries)
       : rows;
 
@@ -189,12 +227,34 @@ export function CsvFigure({
     xNumericValues.length ? Math.min(...xNumericValues) : 0,
     xNumericValues.length ? Math.max(...xNumericValues) : 1,
   );
-  const yTicks = buildTicks(safeYMin, safeYMax, 5);
+  const yTicks = buildTicks(safeYMin, safeYMax, chartConfig?.maxYTicks ?? 5);
   const baselineY =
     margin.top + plotHeight - scaleLinear(0, safeYMin, safeYMax, plotHeight);
   const numberFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   });
+  const pointRadius =
+    chartConfig?.pointRadius ?? (xCategories.length > 40 ? 3.2 : 4.5);
+  const activePointRadius =
+    chartConfig?.activePointRadius ?? pointRadius + 1.5;
+  const lineWidth = chartConfig?.lineWidth ?? 2;
+  const showPoints = chartConfig?.showPoints ?? true;
+
+  function getSeriesStyle(seriesName: string) {
+    return seriesStyleMap?.[seriesName] ?? {};
+  }
+
+  function getSeriesColor(seriesName: string, fallbackIndex: number) {
+    return getSeriesStyle(seriesName).color ?? palette[fallbackIndex % palette.length];
+  }
+
+  function getSeriesPointColor(seriesName: string, fallbackIndex: number) {
+    return getSeriesStyle(seriesName).pointColor ?? getSeriesColor(seriesName, fallbackIndex);
+  }
+
+  function getSeriesMutedColor(seriesName: string) {
+    return getSeriesStyle(seriesName).mutedColor ?? "rgba(154, 154, 154, 0.82)";
+  }
 
   const lineSeries = (currentColor ? visibleSeries : ["All"]).map((seriesName, index) => {
     const seriesRows = currentColor
@@ -227,13 +287,25 @@ export function CsvFigure({
       });
 
     return {
-      color: palette[index % palette.length],
+      color: getSeriesColor(seriesName, index),
+      drawOrder: getSeriesStyle(seriesName).drawOrder ?? 0,
+      isFocused: !focusedSeries || seriesName === focusedSeries,
+      lineWidthOverride: getSeriesStyle(seriesName).lineWidth,
       name: seriesName,
       points,
     };
+  }).sort((left, right) => {
+    const leftPriority = left.drawOrder + (left.isFocused ? 1000 : 0);
+    const rightPriority = right.drawOrder + (right.isFocused ? 1000 : 0);
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    return visibleSeries.indexOf(left.name) - visibleSeries.indexOf(right.name);
   });
 
-  const scatterPoints = filteredRows
+  const scatterPoints = rows
     .map((row) => {
       const xValue = toNumber(row[currentX]);
       const yValue = toNumber(row[currentY]);
@@ -245,14 +317,29 @@ export function CsvFigure({
       return {
         color:
           currentColor && row[currentColor]
-            ? palette[seriesNames.indexOf(row[currentColor]) % palette.length]
+            ? getSeriesPointColor(
+                row[currentColor],
+                seriesNames.indexOf(row[currentColor]),
+              )
             : palette[0],
+        isFocused:
+          !focusedSeries || !currentColor || row[currentColor] === focusedSeries,
         row,
         xValue,
         yValue,
       };
     })
     .filter((point): point is NonNullable<typeof point> => point !== null);
+
+  function handlePointEnter(row: CsvRow, seriesName?: string) {
+    setInspectedRow(row);
+    setHoveredSeries(seriesName ?? null);
+  }
+
+  function clearPointHover() {
+    setInspectedRow(null);
+    setHoveredSeries(null);
+  }
 
   const barData = aggregateRows(filteredRows, currentX, currentY, xIsNumeric);
 
@@ -289,10 +376,12 @@ export function CsvFigure({
             <Control
               label="Y axis"
               onChange={setYKey}
-              options={numericColumns.map((column) => ({
+              options={numericColumns
+                .filter((column) => column !== currentX)
+                .map((column) => ({
                 label: column,
                 value: column,
-              }))}
+                }))}
               value={currentY}
             />
           ) : null}
@@ -357,20 +446,26 @@ export function CsvFigure({
           </g>
 
           {renderXAxisLabels({
+            maxTicks: chartConfig?.maxXTicks,
             margin,
             plotHeight,
             plotWidth,
+            rotateLabels: chartConfig?.rotateXLabels,
             safeXMax,
             safeXMin,
+            tickFormat: chartConfig?.xTickFormat,
             values: currentView === "bar" ? barData.map((bar) => bar.label) : xCategories,
             xIsNumeric,
           })}
 
           {currentView === "line"
             ? lineSeries.map((series) => (
-                <g key={series.name}>
+                <g
+                  className={`csv-series${series.isFocused ? " is-focused" : " is-muted"}`}
+                  key={series.name}
+                >
                   <path
-                    className="csv-line"
+                    className={`csv-line${series.isFocused ? " is-focused" : " is-muted"}`}
                     d={series.points
                       .map((point, index) => {
                         const x = getXPosition({
@@ -391,40 +486,125 @@ export function CsvFigure({
                         return `${index === 0 ? "M" : "L"} ${x} ${y}`;
                       })
                       .join(" ")}
-                    style={{ stroke: series.color }}
+                    style={{
+                      stroke: series.isFocused
+                        ? series.color
+                        : getSeriesMutedColor(series.name),
+                      strokeWidth: series.isFocused
+                        ? (series.lineWidthOverride ?? lineWidth) + 0.2
+                        : Math.max((series.lineWidthOverride ?? lineWidth) - 0.2, 1.2),
+                    }}
                   />
-                  {series.points.map((point) => {
-                    const x = getXPosition({
-                      categories: xCategories,
-                      marginLeft: margin.left,
-                      plotWidth,
-                      safeXMax,
-                      safeXMin,
-                      value: point.xValue,
-                      valueLabel: point.xLabel,
-                      xIsNumeric,
-                    });
-                    const y =
-                      margin.top +
-                      plotHeight -
-                      scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
-                    const isActive = inspectedRow === point.row;
+                  {showPoints
+                    ? series.points.map((point) => {
+                        const x = getXPosition({
+                          categories: xCategories,
+                          marginLeft: margin.left,
+                          plotWidth,
+                          safeXMax,
+                          safeXMin,
+                          value: point.xValue,
+                          valueLabel: point.xLabel,
+                          xIsNumeric,
+                        });
+                        const y =
+                          margin.top +
+                          plotHeight -
+                          scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                        const isActive = inspectedRow === point.row;
 
-                    return (
-                      <circle
-                        aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
-                        className={`csv-point${isActive ? " is-active" : ""}`}
-                        cx={x}
-                        cy={y}
-                        key={`${series.name}-${point.xLabel}-${point.yValue}`}
-                        onFocus={() => setInspectedRow(point.row)}
-                        onMouseEnter={() => setInspectedRow(point.row)}
-                        r={isActive ? 6 : 4.5}
-                        style={{ fill: series.color }}
-                        tabIndex={0}
-                      />
-                    );
-                  })}
+                        return (
+                          <g key={`${series.name}-${point.xLabel}-${point.yValue}`}>
+                            <circle
+                              aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
+                              className={`csv-point${isActive ? " is-active" : ""}${
+                                series.isFocused ? " is-focused" : " is-muted"
+                              }`}
+                              cx={x}
+                              cy={y}
+                              onBlur={clearPointHover}
+                              onFocus={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseEnter={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseLeave={clearPointHover}
+                              r={isActive ? activePointRadius : pointRadius}
+                              style={{
+                                fill: series.isFocused
+                                  ? getSeriesPointColor(
+                                      series.name,
+                                      seriesNames.indexOf(series.name),
+                                    )
+                                  : getSeriesMutedColor(series.name),
+                              }}
+                              tabIndex={0}
+                            />
+                            {isActive ? (
+                              <text className="csv-point-label" x={x + 8} y={y - 10}>
+                                {numberFormatter.format(point.yValue)}
+                              </text>
+                            ) : null}
+                          </g>
+                        );
+                      })
+                    : series.points.map((point) => {
+                        const x = getXPosition({
+                          categories: xCategories,
+                          marginLeft: margin.left,
+                          plotWidth,
+                          safeXMax,
+                          safeXMin,
+                          value: point.xValue,
+                          valueLabel: point.xLabel,
+                          xIsNumeric,
+                        });
+                        const y =
+                          margin.top +
+                          plotHeight -
+                          scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                        const isActive = inspectedRow === point.row;
+
+                        return (
+                          <g key={`${series.name}-${point.xLabel}-${point.yValue}`}>
+                            <circle
+                              aria-hidden="true"
+                              className="csv-point-target"
+                              cx={x}
+                              cy={y}
+                              onMouseEnter={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseLeave={clearPointHover}
+                              r={Math.max(activePointRadius + 3, 7)}
+                              tabIndex={-1}
+                            />
+                            {isActive ? (
+                              <>
+                                <circle
+                                  aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
+                                  className={`csv-point is-active${
+                                    series.isFocused ? " is-focused" : " is-muted"
+                                  }`}
+                                  cx={x}
+                                  cy={y}
+                                  onBlur={clearPointHover}
+                                  onFocus={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                                  r={activePointRadius}
+                                  style={{
+                                    fill: series.isFocused
+                                      ? getSeriesPointColor(
+                                          series.name,
+                                          seriesNames.indexOf(series.name),
+                                        )
+                                      : getSeriesMutedColor(series.name),
+                                    pointerEvents: "none",
+                                  }}
+                                  tabIndex={0}
+                                />
+                                <text className="csv-point-label" x={x + 8} y={y - 10}>
+                                  {numberFormatter.format(point.yValue)}
+                                </text>
+                              </>
+                            ) : null}
+                          </g>
+                        );
+                      })}
                 </g>
               ))
             : null}
@@ -441,18 +621,34 @@ export function CsvFigure({
                 const isActive = inspectedRow === point.row;
 
                 return (
-                  <circle
-                    aria-label={`${point.row[currentX]}, ${currentY}: ${point.yValue}`}
-                    className={`csv-point${isActive ? " is-active" : ""}`}
-                    cx={x}
-                    cy={y}
-                    key={index}
-                    onFocus={() => setInspectedRow(point.row)}
-                    onMouseEnter={() => setInspectedRow(point.row)}
-                    r={isActive ? 6 : 4.5}
-                    style={{ fill: point.color }}
-                    tabIndex={0}
-                  />
+                  <g key={index}>
+                    <circle
+                      aria-label={`${point.row[currentX]}, ${currentY}: ${point.yValue}`}
+                      className={`csv-point${isActive ? " is-active" : ""}${
+                        point.isFocused ? " is-focused" : " is-muted"
+                      }`}
+                      cx={x}
+                      cy={y}
+                      onBlur={clearPointHover}
+                      onFocus={() => handlePointEnter(point.row, currentColor ? point.row[currentColor] : undefined)}
+                      onMouseEnter={() => handlePointEnter(point.row, currentColor ? point.row[currentColor] : undefined)}
+                      onMouseLeave={clearPointHover}
+                      r={isActive ? activePointRadius : pointRadius}
+                      style={{
+                        fill: point.isFocused
+                          ? point.color
+                          : currentColor
+                            ? getSeriesMutedColor(point.row[currentColor])
+                            : "rgba(154, 154, 154, 0.82)",
+                      }}
+                      tabIndex={0}
+                    />
+                    {isActive ? (
+                      <text className="csv-point-label" x={x + 8} y={y - 10}>
+                        {numberFormatter.format(point.yValue)}
+                      </text>
+                    ) : null}
+                  </g>
                 );
               })
             : null}
@@ -476,8 +672,10 @@ export function CsvFigure({
                       aria-label={`${bar.label}, ${currentY}: ${bar.value}`}
                       className={`csv-bar${isActive ? " is-active" : ""}`}
                       height={heightValue}
-                      onFocus={() => setInspectedRow(bar.row)}
-                      onMouseEnter={() => setInspectedRow(bar.row)}
+                      onBlur={clearPointHover}
+                      onFocus={() => handlePointEnter(bar.row)}
+                      onMouseEnter={() => handlePointEnter(bar.row)}
+                      onMouseLeave={clearPointHover}
                       rx={4}
                       ry={4}
                       style={{ fill: palette[0] }}
@@ -520,17 +718,19 @@ export function CsvFigure({
           >
             All
           </button>
-          {seriesNames.map((seriesName, index) => (
+          {sortedSeriesNames.map((seriesName, index) => (
             <button
               className={`csv-legend-button${activeSeries === seriesName ? " is-active" : ""}`}
               key={seriesName}
+              onMouseEnter={() => setHoveredSeries(seriesName)}
+              onMouseLeave={() => setHoveredSeries(null)}
               onClick={() => setActiveSeries(seriesName)}
               type="button"
             >
               <span
                 aria-hidden="true"
                 className="csv-legend-button__swatch"
-                style={{ backgroundColor: palette[index % palette.length] }}
+                style={{ backgroundColor: getSeriesColor(seriesName, index) }}
               />
               {seriesName}
             </button>
@@ -567,24 +767,30 @@ function Control({
 }
 
 function renderXAxisLabels({
+  maxTicks,
   margin,
   plotHeight,
   plotWidth,
+  rotateLabels,
   safeXMax,
   safeXMin,
+  tickFormat,
   values,
   xIsNumeric,
 }: {
+  maxTicks?: number;
   margin: { top: number; right: number; bottom: number; left: number };
   plotHeight: number;
   plotWidth: number;
+  rotateLabels?: boolean;
   safeXMax: number;
   safeXMin: number;
+  tickFormat?: "raw" | "ym" | "ymd-short";
   values: string[];
   xIsNumeric: boolean;
 }) {
   if (xIsNumeric) {
-    return buildTicks(safeXMin, safeXMax, 5).map((tick) => {
+    return buildTicks(safeXMin, safeXMax, maxTicks ?? 5).map((tick) => {
       const x = margin.left + scaleLinear(tick, safeXMin, safeXMax, plotWidth);
 
       return (
@@ -603,9 +809,23 @@ function renderXAxisLabels({
     });
   }
 
-  const shouldRotate = values.length > 6 || values.some((value) => value.length > 10);
+  const labelLimit = Math.max(maxTicks ?? 10, 2);
+  const visibleIndexes =
+    values.length <= labelLimit
+      ? values.map((_, index) => index)
+      : Array.from(
+          new Set([
+            ...values
+              .map((_, index) => index)
+              .filter((index) => index % Math.ceil((values.length - 1) / (labelLimit - 1)) === 0),
+            values.length - 1,
+          ]),
+        );
+  const shouldRotate =
+    rotateLabels ?? (visibleIndexes.length > 6 || values.some((value) => value.length > 10));
 
-  return values.map((value, index) => {
+  return visibleIndexes.map((index) => {
+    const value = values[index];
     const step = plotWidth / Math.max(values.length, 1);
     const x = margin.left + (index + 0.5) * step;
     const y = margin.top + plotHeight + (shouldRotate ? 30 : 24);
@@ -624,7 +844,7 @@ function renderXAxisLabels({
           x={shouldRotate ? 0 : x}
           y={shouldRotate ? 0 : y}
         >
-          {value}
+          {formatTickLabel(value, tickFormat)}
         </text>
       </g>
     );
@@ -785,4 +1005,23 @@ function formatShortNumber(value: number) {
   });
 
   return formatter.format(value);
+}
+
+function formatTickLabel(value: string, tickFormat: "raw" | "ym" | "ymd-short" = "raw") {
+  if (tickFormat === "raw") {
+    return value;
+  }
+
+  if (tickFormat === "ym") {
+    return /^\d{4}-\d{2}(-\d{2})?$/.test(value) ? value.slice(0, 7) : value;
+  }
+
+  if (tickFormat === "ymd-short") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value.slice(2);
+    }
+    return value;
+  }
+
+  return value;
 }
