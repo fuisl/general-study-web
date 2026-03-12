@@ -198,8 +198,12 @@ export function ReportArticle() {
           Before the widespread adoption of modern machine learning methods,
           researchers and financial analysts relied heavily on statistical
           time-series models to forecast financial variables. Common approaches
-          include ARIMA (AutoRegressive Integrated Moving Average), linear
-          regression, and Vector AutoRegression (VAR) models. These techniques
+          include ARIMA (AutoRegressive Integrated Moving Average)
+          <InlineCitation item={citationById["box-jenkins-2015"]} />, linear
+          regression
+          <InlineCitation item={citationById["montgomery-2021"]} />, and
+          Vector AutoRegression (VAR) models
+          <InlineCitation item={citationById["sims-1980"]} />. These techniques
           are grounded in statistical theory and are specifically designed to
           model relationships between past and future observations. ARIMA
           models, in particular, have been widely applied for decades due to
@@ -229,7 +233,9 @@ export function ReportArticle() {
           practical alternative. Therefore, this report focuses on several
           lightweight neural baselines as they are simpler than large recurrent
           architectures, train faster, and still provide a meaningful
-          comparison framework.
+          comparison framework
+          <InlineCitation item={citationById["elman-1990"]} />
+          <InlineCitation item={citationById["hochreiter-schmidhuber-1997"]} />.
         </p>
         <p>
           To provide a broader comparison between neural and tree-based machine
@@ -269,7 +275,7 @@ export function ReportArticle() {
           learning method that builds multiple decision trees using random
           subsets of data and features. The final prediction is obtained by
           averaging the outputs of the individual trees, which reduces
-          overfitting and improves generalization performance
+          overfitting and improves generalization
           <InlineCitation item={citationById["breiman-2001"]} />.
         </p>
         <p>
@@ -357,7 +363,9 @@ export function ReportArticle() {
         <p>
           The indicators in these four categories are selected based on a
           previous study that identified the most impactful technical indicators
-          for the S&amp;P 500 Index. The selected indicators include:
+          for the S&amp;P 500 Index
+          <InlineCitation item={citationById["mostafavi-hooman-2025"]} />. The
+          selected indicators include:
         </p>
 
         <FigureFrame
@@ -499,7 +507,8 @@ export function ReportArticle() {
           constituents of the VN30 index. Furthermore, the stock data of Gold
           Futures are collected to define the influence of gold on the
           Vietnamese Banking sector. Moreover, this study focuses on the data
-          from 05/01/2015 - 27/02/2026.
+          from 05/01/2015 - 27/02/2026
+          <InlineCitation item={citationById["investing-vn-data"]} />.
         </p>
         <p>
           The original data of each stock includes 6 daily features: Date
@@ -607,13 +616,183 @@ export function ReportArticle() {
       </ArticleSection>
 
       <ArticleSection id="results" title="Results">
+        <h3>Linear Methods</h3>
         <p>
-          The result figures show a consistent pattern. SHAP explanations are
-          dominated by return-based variables, while volatility, volume, and
-          the gold signal play secondary roles. Taken together, the diagrams
-          suggest that the models behave mainly as trend- and
-          momentum-sensitive forecasters rather than relying equally on all
-          available indicators.
+          The linear-family results can be read from two angles: predictive
+          performance and feature attribution. In the error table below, Linear
+          and DLinear remain nearly identical across all input lengths, while
+          NLinear tends to produce slightly weaker error metrics. At the same
+          time, the exported SHAP summaries show how these models distribute
+          explanatory weight across lags.
+        </p>
+
+        <FigureFrame
+          caption="This performance chart summarizes the reported RMSE, MAE, R², and direction scores for Linear, DLinear, and NLinear across the four input lengths. Use the metric selector to switch between evaluation criteria."
+          label="Results"
+          lane="page"
+          title="Linear and DLinear perform almost identically, while NLinear is usually slightly weaker on error metrics."
+        >
+          <SmallMultiplesFigure
+            chartConfig={{
+              height: 250,
+              lineWidth: 2,
+              maxXTicks: 4,
+              maxYTicks: 4,
+              pointRadius: 3.2,
+              rotateXLabels: false,
+              showPoints: true,
+            }}
+            groupKey="model"
+            label="Linear performance summary"
+            metrics={[
+              { key: "rmse", label: "RMSE" },
+              { key: "mae", label: "MAE" },
+              { key: "r2", label: "R²" },
+              { key: "direction", label: "Direction" },
+            ]}
+            src="/data/linear-performance-summary.csv"
+            xKey="input_length"
+          />
+        </FigureFrame>
+        <p>
+          The reported forecasting metrics indicate that the shortest lookbacks
+          achieve the lowest RMSE and MAE, while longer lookbacks gradually
+          increase forecast error. Linear and DLinear are effectively tied at
+          each horizon. NLinear is more volatile: it performs worse on RMSE and
+          MAE in the shorter windows, and although direction accuracy improves
+          for some settings, it does not produce a clear overall advantage.
+        </p>
+
+        <FigureFrame
+          caption="The linear lookback summary compares the magnitude of exported SHAP signals across Linear, DLinear, and NLinear at four input lengths. It should be read as an attribution summary rather than as a forecast-error metric."
+          label="Results"
+          lane="page"
+          title="Within the linear family, attribution magnitude grows as the lookback window becomes longer."
+        >
+          <CsvFigure
+            chartConfig={{
+              height: 360,
+              lineWidth: 2,
+              maxXTicks: 4,
+              maxYTicks: 5,
+              pointRadius: 3.2,
+              rotateXLabels: false,
+              showPoints: true,
+              width: 920,
+            }}
+            controls={[]}
+            defaultColor="model"
+            defaultView="line"
+            defaultX="lookback"
+            defaultY="mean_sample_abs"
+            label="Linear lookback summary"
+            showLegend
+            src="/data/linear-lookback-validation.csv"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="The lag-importance plot aggregates absolute SHAP mass by lag position for the focused linear bundle, allowing the three linear architectures to be compared on the same temporal axis."
+          label="Results"
+          lane="page"
+          title="Linear and DLinear concentrate around one dominant lag, while NLinear spreads influence across more recent positions."
+        >
+          <CsvFigure
+            chartConfig={{
+              height: 360,
+              lineWidth: 2,
+              maxXTicks: 7,
+              maxYTicks: 5,
+              pointRadius: 3.2,
+              rotateXLabels: false,
+              showPoints: true,
+              width: 920,
+            }}
+            controls={[]}
+            defaultColor="model"
+            defaultView="line"
+            defaultX="lag_day"
+            defaultY="importance"
+            label="Linear lag importance"
+            showLegend
+            src="/data/linear-lag-importance.csv"
+          />
+        </FigureFrame>
+        <p>
+          The lag profile makes the model differences more specific. Linear and
+          DLinear are nearly identical and place their highest importance on
+          lag 5, with much smaller contributions elsewhere. NLinear uses a
+          broader set of recent lags, peaking around lags 4, 1, and 6, which
+          suggests a more distributed use of short-horizon return history.
+        </p>
+
+        <FigureFrame
+          caption="This local linear SHAP view decomposes one bullish sample and one bearish sample from the exported linear bundle."
+          label="Results"
+          lane="page"
+          title="Local linear explanations remain dominated by the same return channel observed at different lag positions."
+        >
+          <RankedBarFigure
+            defaultGroup="Bullish sample"
+            groupKey="case"
+            label="Linear local SHAP explanation"
+            labelKey="feature"
+            limit={10}
+            mode="diverging"
+            src="/data/linear-local-shap.csv"
+            valueKey="contribution"
+          />
+        </FigureFrame>
+        <p>
+          The local linear explanation is still dominated by <code>return_1d</code>
+          {" "}across time positions. In the bullish sample, the strongest pushes
+          come from lags 4 and 3; in the bearish sample, the largest downward
+          contributions come from lags 4, 6, and 7. This indicates that the
+          linear bundle extracts most of its explanatory signal from temporal
+          structure within one return variable rather than from a wide mix of
+          technical indicators.
+        </p>
+
+        <h3>Tree Methods</h3>
+        <p>
+          The tree-based models provide a stronger baseline in terms of model
+          comparison. Their evaluation metrics are available directly from the
+          workspace outputs, and the SHAP figures below then explain which
+          variables are responsible for the resulting forecasts.
+        </p>
+
+        <FigureFrame
+          caption="This chart summarizes the reported evaluation metrics for RandomForest, XGBoost, and LightGBM. Use the metric selector to compare RMSE, MAE, R², and direction accuracy."
+          label="Results"
+          lane="page"
+          title="XGBoost and LightGBM are closely matched, while RandomForest trails on all reported metrics."
+        >
+          <CsvFigure
+            chartConfig={{
+              height: 360,
+              maxXTicks: 3,
+              maxYTicks: 5,
+              pointRadius: 3,
+              rotateXLabels: false,
+              width: 920,
+            }}
+            controls={["y"]}
+            defaultColor="model"
+            defaultView="bar"
+            defaultX="model"
+            defaultY="rmse"
+            label="Traditional ML performance summary"
+            showLegend={false}
+            src="/data/tree-model-metrics.csv"
+          />
+        </FigureFrame>
+        <p>
+          Among the traditional machine learning models, XGBoost records the
+          lowest RMSE, while LightGBM is almost identical and slightly better
+          on MAE and R². Both models achieve direction accuracy a little above
+          51%. RandomForest performs worse across all four reported metrics,
+          especially on direction accuracy, so the stronger tree-based evidence
+          comes primarily from XGBoost and LightGBM.
         </p>
 
         <FigureFrame
@@ -623,7 +802,7 @@ export function ReportArticle() {
           title="Local SHAP explanations show how individual features contribute to a single forecast."
         >
           <RankedBarFigure
-            defaultGroup="Positive-contribution case · 2018-07-05"
+            defaultGroup="Bullish sample"
             groupKey="case"
             label="Local SHAP explanation"
             labelKey="feature"
@@ -635,23 +814,23 @@ export function ReportArticle() {
         </FigureFrame>
         <p>
           The local SHAP plot makes this pattern visible at the single-sample
-          level. In the positive-contribution case, the forecast is pushed
+          level. In the bullish sample, the forecast is pushed
           upward mainly by short-horizon returns such as 1-day, 3-day, 5-day,
-          and 7-day returns. In the negative-contribution case, the strongest
+          and 7-day returns. In the bearish sample, the strongest
           downward force comes from the 30-day return, followed by ATR and
           other lagged-return terms. This indicates that recent price history
           remains the main source of both bullish and bearish signals.
         </p>
 
         <FigureFrame
-          caption="This feature-family heatmap provides a global view by aggregating SHAP mass into broader feature families so the explanatory pattern can be compared across models."
+          caption="This feature-family heatmap provides a global view by aggregating SHAP mass into broader feature families so the explanatory pattern can be compared across both the linear and tree-based model families."
           label="Results"
           lane="screen"
-          title="Global SHAP explanations summarize which feature families remain influential across the model family."
+          title="Global SHAP explanations summarize which feature families remain influential across both model families."
         >
           <HeatmapFigure
             label="Feature family heatmap"
-            src="/data/tree-feature-family.csv"
+            src="/data/model-feature-family.csv"
             valueKey="share"
             valueFormat="percent"
             xKey="family"
@@ -669,12 +848,13 @@ export function ReportArticle() {
         </FigureFrame>
         <p>
           The feature-family heatmap provides the corresponding global view.
-          Across RandomForest, XGBoost, and LightGBM, short returns account for
-          the largest share of SHAP mass, and long returns consistently appear
-          second. Trend moving averages remain relevant, but clearly below the
-          return families. Volatility, volume-flow indicators, and the
-          external gold variable contribute less, although none of them
-          disappears completely.
+          For the linear family, SHAP mass is concentrated almost entirely in
+          the short-return channel, which is consistent with the earlier lag
+          plots showing that the linear models rely mainly on one return
+          sequence across time positions. The tree models are broader: short
+          returns still dominate, long returns appear second, and trend,
+          volatility, volume flow, and gold remain visible as smaller but still
+          nonzero contributors.
         </p>
 
         <FigureFrame

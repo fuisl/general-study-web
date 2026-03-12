@@ -32,6 +32,29 @@ const LINEAR_FEATURE_GROUPS = [
   { label: "volatility", features: ["ATR_14"] },
   { label: "gold_return", features: ["gold_return"] },
 ];
+const LINEAR_PERFORMANCE_ROWS = [
+  { input_length: "7d", model: "Linear", rmse: "0.0153", mae: "0.0090", r2: "-0.0161", direction: "0.4896" },
+  { input_length: "7d", model: "DLinear", rmse: "0.0153", mae: "0.0090", r2: "-0.0161", direction: "0.4877" },
+  { input_length: "7d", model: "NLinear", rmse: "0.0164", mae: "0.0099", r2: "-0.1627", direction: "0.5037" },
+  { input_length: "30d", model: "Linear", rmse: "0.0154", mae: "0.0090", r2: "-0.0249", direction: "0.5123" },
+  { input_length: "30d", model: "DLinear", rmse: "0.0154", mae: "0.0090", r2: "-0.0252", direction: "0.5112" },
+  { input_length: "30d", model: "NLinear", rmse: "0.0156", mae: "0.0092", r2: "-0.0472", direction: "0.4944" },
+  { input_length: "120d", model: "Linear", rmse: "0.0162", mae: "0.0098", r2: "-0.0735", direction: "0.5160" },
+  { input_length: "120d", model: "DLinear", rmse: "0.0162", mae: "0.0098", r2: "-0.0729", direction: "0.5171" },
+  { input_length: "120d", model: "NLinear", rmse: "0.0163", mae: "0.0099", r2: "-0.0867", direction: "0.5048" },
+  { input_length: "480d", model: "Linear", rmse: "0.0175", mae: "0.0109", r2: "-0.1670", direction: "0.5326" },
+  { input_length: "480d", model: "DLinear", rmse: "0.0175", mae: "0.0109", r2: "-0.1676", direction: "0.5326" },
+  { input_length: "480d", model: "NLinear", rmse: "0.0175", mae: "0.0108", r2: "-0.1640", direction: "0.5161" },
+];
+const LINEAR_FAMILY_HEATMAP_GROUPS = [
+  { family: "short_return", features: ["return_1d"] },
+  { family: "long_return", features: [] },
+  { family: "trend_ma", features: ["KAMA_10", "SMA_20", "EMA_20", "HMA_20"] },
+  { family: "price_level", features: ["close_log", "HCL3", "BBL_20"] },
+  { family: "volatility", features: ["ATR_14"] },
+  { family: "volume_flow", features: ["OBV", "PVT"] },
+  { family: "external", features: ["gold_return"] },
+];
 
 const TREE_MODELS = ["RandomForest", "XGBoost", "LightGBM"];
 const CONSTITUENT_BANKS = ["BID", "CTG", "MBB", "STB", "VCB"];
@@ -86,6 +109,11 @@ async function main() {
       "mean_sample_abs",
       "peak_sample_abs",
     ],
+  );
+  writeCsv(
+    join(dataDir, "linear-performance-summary.csv"),
+    LINEAR_PERFORMANCE_ROWS,
+    ["input_length", "model", "rmse", "mae", "r2", "direction"],
   );
   writeCsv(
     join(dataDir, "linear-prediction-trace.csv"),
@@ -154,6 +182,11 @@ async function main() {
   writeCsv(
     join(dataDir, "tree-feature-family.csv"),
     buildTreeFeatureFamily(shapByModel),
+    ["model", "family", "importance", "share"],
+  );
+  writeCsv(
+    join(dataDir, "model-feature-family.csv"),
+    await buildModelFeatureFamily(linearData.focusLookback, shapByModel),
     ["model", "family", "importance", "share"],
   );
   writeCsv(
@@ -611,6 +644,50 @@ function buildLinearGoldAudit(summaries) {
   });
 }
 
+async function buildModelFeatureFamily(focusLookback, shapByModel) {
+  const linearRows = [];
+
+  for (const model of LINEAR_MODELS) {
+    const filePath = join(rawDir, "shap_results", focusLookback, `${model}_shap_values.csv`);
+    const familyTotals = new Map(
+      LINEAR_FAMILY_HEATMAP_GROUPS.map((group) => [group.family, 0]),
+    );
+    let totalAbs = 0;
+
+    await streamCsvRows(filePath, (row) => {
+      const absValue = Math.abs(Number(row.shap_value));
+
+      if (!Number.isFinite(absValue)) {
+        return;
+      }
+
+      totalAbs += absValue;
+
+      const group = LINEAR_FAMILY_HEATMAP_GROUPS.find((entry) =>
+        entry.features.includes(row.feature),
+      );
+
+      if (!group) {
+        return;
+      }
+
+      familyTotals.set(group.family, (familyTotals.get(group.family) ?? 0) + absValue);
+    });
+
+    LINEAR_FAMILY_HEATMAP_GROUPS.forEach((group) => {
+      const importance = familyTotals.get(group.family) ?? 0;
+      linearRows.push({
+        family: group.family,
+        importance: formatNumber(importance),
+        model,
+        share: formatNumber(totalAbs === 0 ? 0 : importance / totalAbs),
+      });
+    });
+  }
+
+  return [...linearRows, ...buildTreeFeatureFamily(shapByModel)];
+}
+
 function buildTreeModelMetrics(notebook) {
   const outputText = notebook.cells
     .flatMap((cell) => cell.outputs ?? [])
@@ -718,9 +795,7 @@ function buildTreeLocalShap(rows, stockDates) {
     const totalContribution = Object.entries(row)
       .filter(([feature]) => feature !== "sample_index")
       .reduce((sum, [, value]) => sum + Number(value), 0);
-    const directionLabel =
-      totalContribution >= 0 ? "Positive-contribution case" : "Negative-contribution case";
-    const caseLabel = `${directionLabel} · ${stockDates[entry.sampleIndex] ?? `sample ${entry.sampleIndex + 1}`}`;
+    const caseLabel = totalContribution >= 0 ? "Bullish sample" : "Bearish sample";
     const features = Object.entries(row)
       .filter(([feature]) => feature !== "sample_index")
       .map(([feature, value]) => ({

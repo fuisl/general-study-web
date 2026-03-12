@@ -3,11 +3,13 @@
 import { useState } from "react";
 import {
   buildTicks,
+  chartPalette,
   CsvRow,
   formatShortNumber,
   normalizeExtent,
   scaleLinear,
   toNumber,
+  uniqueValues,
   useCsvData,
 } from "./chart-utils";
 
@@ -20,7 +22,9 @@ type SmallMultiplesFigureProps = {
   src: string;
   xKey: string;
   metrics: MetricConfig[];
+  groupKey?: string;
   label?: string;
+  showLegend?: boolean;
   chartConfig?: {
     height?: number;
     lineWidth?: number;
@@ -33,17 +37,21 @@ type SmallMultiplesFigureProps = {
   };
 };
 
-const colorByIndex = ["#2457a6", "#2c7a7b", "#a4582f", "#6b4fb3"];
-
 export function SmallMultiplesFigure({
   chartConfig,
+  groupKey,
   label = "Small multiples chart",
   metrics,
+  showLegend = true,
   src,
   xKey,
 }: SmallMultiplesFigureProps) {
   const { error, rows, status } = useCsvData(src);
-  const [inspected, setInspected] = useState<{ metricKey: string; row: CsvRow } | null>(null);
+  const [inspected, setInspected] = useState<{
+    groupName: string;
+    metricKey: string;
+    row: CsvRow;
+  } | null>(null);
 
   if (status === "loading") {
     return <div className="csv-figure__state">Loading data...</div>;
@@ -53,31 +61,40 @@ export function SmallMultiplesFigure({
     return <div className="csv-figure__state">{error}</div>;
   }
 
+  const groupNames = groupKey ? uniqueValues(rows, groupKey) : ["All"];
   const pointsByMetric = metrics
     .map((metric) => ({
       ...metric,
-      points: rows
-        .map((row) => ({
-          row,
-          xLabel: row[xKey],
-          xValue: toNumber(row[xKey]),
-          yValue: toNumber(row[metric.key]),
+      series: groupNames
+        .map((groupName) => ({
+          groupName,
+          points: rows
+            .filter((row) => (groupKey ? row[groupKey] === groupName : true))
+            .map((row) => ({
+              row,
+              xLabel: row[xKey],
+              xValue: toNumber(row[xKey]),
+              yValue: toNumber(row[metric.key]),
+            }))
+            .filter(
+              (
+                point,
+              ): point is { row: CsvRow; xLabel: string; xValue: number | null; yValue: number } =>
+                point.yValue !== null && point.xLabel !== "",
+            ),
         }))
-        .filter(
-          (point): point is { row: CsvRow; xLabel: string; xValue: number | null; yValue: number } =>
-            point.yValue !== null && point.xLabel !== "",
-        ),
+        .filter((series) => series.points.length > 0),
     }))
-    .filter((metric) => metric.points.length > 0);
+    .filter((metric) => metric.series.length > 0);
 
   if (!pointsByMetric.length) {
     return <div className="csv-figure__state">This figure has no numeric metric panels to render.</div>;
   }
 
-  const xValues = pointsByMetric[0]?.points.map((point) => point.xLabel) ?? [];
-  const xNumericValues = pointsByMetric[0]?.points
-    .map((point) => point.xValue)
-    .filter((value): value is number => value !== null) ?? [];
+  const xValues = uniqueValues(rows, xKey);
+  const xNumericValues = xValues
+    .map((value) => toNumber(value))
+    .filter((value): value is number => value !== null);
   const xIsNumeric = xNumericValues.length === xValues.length;
   const [safeXMin, safeXMax] = normalizeExtent(
     xNumericValues.length ? Math.min(...xNumericValues) : 0,
@@ -95,13 +112,35 @@ export function SmallMultiplesFigure({
   const pointRadius = chartConfig?.pointRadius ?? 3;
   const showPoints = chartConfig?.showPoints ?? true;
 
+  const legendGroups =
+    groupKey && showLegend && groupNames.length > 1 ? groupNames : [];
+
   return (
     <div className="small-multiples-figure">
+      {legendGroups.length ? (
+        <div className="csv-figure__legend small-multiples-figure__legend" role="group" aria-label="Series legend">
+          {legendGroups.map((groupName, index) => (
+            <span className="csv-legend-button small-multiples-figure__legend-item" key={groupName}>
+              <span
+                aria-hidden="true"
+                className="csv-legend-button__swatch"
+                style={{ backgroundColor: chartPalette[index % chartPalette.length] }}
+              />
+              {groupName}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="small-multiples-grid" role="img" aria-label={label}>
-        {pointsByMetric.map((metric, metricIndex) => {
-          const yValues = metric.points.map((point) => point.yValue);
+        {pointsByMetric.map((metric) => {
+          const yValues = metric.series.flatMap((series) =>
+            series.points.map((point) => point.yValue),
+          );
           const [safeYMin, safeYMax] = normalizeExtent(Math.min(...yValues), Math.max(...yValues));
           const yTicks = buildTicks(safeYMin, safeYMax, maxYTicks);
+          const focusedGroup =
+            inspected?.metricKey === metric.key ? inspected.groupName : null;
 
           return (
             <div className="small-multiples-card" key={metric.key}>
@@ -146,65 +185,88 @@ export function SmallMultiplesFigure({
                   xIsNumeric,
                 })}
 
-                <path
-                  className="csv-line"
-                  d={metric.points
-                    .map((point, index) => {
-                      const x = getSmallMultipleX({
-                        marginLeft: margin.left,
-                        plotWidth,
-                        safeXMax,
-                        safeXMin,
-                        value: point.xValue,
-                        valueLabel: point.xLabel,
-                        values: xValues,
-                        xIsNumeric,
-                      });
-                      const y =
-                        margin.top +
-                        plotHeight -
-                        scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                {metric.series.map((series, seriesIndex) => {
+                  const isFocused = !focusedGroup || focusedGroup === series.groupName;
+                  const seriesColor = chartPalette[seriesIndex % chartPalette.length];
 
-                      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-                    })
-                    .join(" ")}
-                  style={{ stroke: colorByIndex[metricIndex % colorByIndex.length], strokeWidth: lineWidth }}
-                />
+                  return (
+                    <g key={`${metric.key}-${series.groupName}`}>
+                      <path
+                        className={`csv-line${isFocused ? " is-focused" : " is-muted"}`}
+                        d={series.points
+                          .map((point, index) => {
+                            const x = getSmallMultipleX({
+                              marginLeft: margin.left,
+                              plotWidth,
+                              safeXMax,
+                              safeXMin,
+                              value: point.xValue,
+                              valueLabel: point.xLabel,
+                              values: xValues,
+                              xIsNumeric,
+                            });
+                            const y =
+                              margin.top +
+                              plotHeight -
+                              scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
 
-                {showPoints
-                  ? metric.points.map((point, index) => {
-                      const x = getSmallMultipleX({
-                        marginLeft: margin.left,
-                        plotWidth,
-                        safeXMax,
-                        safeXMin,
-                        value: point.xValue,
-                        valueLabel: point.xLabel,
-                        values: xValues,
-                        xIsNumeric,
-                      });
-                      const y =
-                        margin.top +
-                        plotHeight -
-                        scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
-                      const isActive =
-                        inspected?.metricKey === metric.key && inspected.row === point.row;
+                            return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+                          })
+                          .join(" ")}
+                        style={{ stroke: seriesColor, strokeWidth: lineWidth }}
+                      />
 
-                      return (
-                        <circle
-                          className={`csv-point${isActive ? " is-active" : ""}`}
-                          cx={x}
-                          cy={y}
-                          key={`${metric.key}-${index}`}
-                          onFocus={() => setInspected({ metricKey: metric.key, row: point.row })}
-                          onMouseEnter={() => setInspected({ metricKey: metric.key, row: point.row })}
-                          r={isActive ? pointRadius + 1.5 : pointRadius}
-                          style={{ fill: colorByIndex[metricIndex % colorByIndex.length] }}
-                          tabIndex={0}
-                        />
-                      );
-                    })
-                  : null}
+                      {showPoints
+                        ? series.points.map((point, index) => {
+                            const x = getSmallMultipleX({
+                              marginLeft: margin.left,
+                              plotWidth,
+                              safeXMax,
+                              safeXMin,
+                              value: point.xValue,
+                              valueLabel: point.xLabel,
+                              values: xValues,
+                              xIsNumeric,
+                            });
+                            const y =
+                              margin.top +
+                              plotHeight -
+                              scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                            const isActive =
+                              inspected?.metricKey === metric.key &&
+                              inspected.row === point.row &&
+                              inspected.groupName === series.groupName;
+
+                            return (
+                              <circle
+                                className={`csv-point${isFocused ? " is-focused" : " is-muted"}${isActive ? " is-active" : ""}`}
+                                cx={x}
+                                cy={y}
+                                key={`${metric.key}-${series.groupName}-${index}`}
+                                onFocus={() =>
+                                  setInspected({
+                                    groupName: series.groupName,
+                                    metricKey: metric.key,
+                                    row: point.row,
+                                  })
+                                }
+                                onMouseEnter={() =>
+                                  setInspected({
+                                    groupName: series.groupName,
+                                    metricKey: metric.key,
+                                    row: point.row,
+                                  })
+                                }
+                                r={isActive ? pointRadius + 1.5 : pointRadius}
+                                style={{ fill: seriesColor }}
+                                tabIndex={0}
+                              />
+                            );
+                          })
+                        : null}
+                    </g>
+                  );
+                })}
               </svg>
             </div>
           );
@@ -217,13 +279,18 @@ export function SmallMultiplesFigure({
             <span>
               <strong>{xKey}:</strong> {inspected.row[xKey]}
             </span>
+            {groupKey ? (
+              <span>
+                <strong>{groupKey}:</strong> {inspected.row[groupKey] || inspected.groupName}
+              </span>
+            ) : null}
             <span>
               <strong>{metrics.find((metric) => metric.key === inspected.metricKey)?.label}:</strong>{" "}
               {inspected.row[inspected.metricKey]}
             </span>
           </>
         ) : (
-          "Hover a point to inspect a metric by horizon."
+          "Hover a point to inspect a metric."
         )}
       </div>
     </div>
