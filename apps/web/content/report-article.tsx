@@ -488,76 +488,6 @@ export function ReportArticle() {
           prices.
         </p>
 
-        <FigureFrame
-          caption="This exported local SHAP view illustrates how one prediction can be decomposed into feature-level pushes and pulls, matching the local-explanation discussion in the text."
-          label="Explainable AI"
-          lane="page"
-          title="Local SHAP explanations show how individual features contribute to a single forecast."
-        >
-          <RankedBarFigure
-            defaultGroup="Bullish sample"
-            groupKey="case"
-            label="Local SHAP explanation"
-            labelKey="feature"
-            limit={10}
-            mode="diverging"
-            src="/data/tree-local-shap.csv"
-            valueKey="contribution"
-          />
-        </FigureFrame>
-
-        <FigureFrame
-          caption="This feature-family heatmap provides the corresponding global view. It aggregates SHAP mass into families so the broader explanatory pattern can be read across models."
-          label="Explainable AI"
-          lane="screen"
-          title="Global SHAP explanations summarize which feature families remain influential across the model family."
-        >
-          <HeatmapFigure
-            label="Feature family heatmap"
-            src="/data/tree-feature-family.csv"
-            valueKey="share"
-            valueFormat="percent"
-            xKey="family"
-            xLabelMap={{
-              external: "Gold",
-              long_return: "Long return",
-              price_level: "Price level",
-              short_return: "Short return",
-              trend_ma: "Trend MA",
-              volatility: "Volatility",
-              volume_flow: "Volume flow",
-            }}
-            yKey="model"
-          />
-        </FigureFrame>
-
-        <FigureFrame
-          caption="Ranks are shown instead of raw importance so the three tree models can be compared on the same visual footing. Lower ranks are stronger, and the chart is flipped horizontally so the compact set of return features can be scanned left-to-right."
-          label="Explainable AI"
-          lane="screen"
-          title="The tree models still agree on a compact set of high-priority return features."
-        >
-          <HeatmapFigure
-            label="Feature rank heatmap"
-            reverseScale
-            src="/data/tree-feature-rank-heatmap.csv"
-            valueKey="rank"
-            xKey="feature"
-            xLabelMap={{
-              ATR_14: "ATR 14",
-              gold_return: "Gold return",
-              return_10d_past: "10d return",
-              return_120d_past: "120d return",
-              return_1d_past: "1d return",
-              return_30d_past: "30d return",
-              return_3d_past: "3d return",
-              return_480d_past: "480d return",
-              return_6d_past: "6d return",
-              return_7d_past: "7d return",
-            }}
-            yKey="model"
-          />
-        </FigureFrame>
       </ArticleSection>
 
       <ArticleSection id="data-collection-processing" title="Data Collection and Processing">
@@ -674,6 +604,193 @@ export function ReportArticle() {
             valueKey="observations"
           />
         </FigureFrame>
+      </ArticleSection>
+
+      <ArticleSection id="results" title="Results">
+        <p>
+          The results presented in this web version are organized around the
+          exported SHAP figures currently available in the workspace. Rather
+          than repeating the methodological discussion, this section focuses on
+          how the diagrams summarize feature-level contributions at both the
+          local and global levels.
+        </p>
+        <p>
+          The first figure below decomposes a single forecast into feature
+          pushes and pulls. The following heatmaps then aggregate the same
+          explanatory logic across the model family so that broader patterns in
+          feature influence can be read more systematically.
+        </p>
+
+        <FigureFrame
+          caption="This exported local SHAP view illustrates how one prediction can be decomposed into feature-level pushes and pulls, matching the explanation-focused results discussed in the report."
+          label="Results"
+          lane="page"
+          title="Local SHAP explanations show how individual features contribute to a single forecast."
+        >
+          <RankedBarFigure
+            defaultGroup="Positive-contribution case · 2018-07-05"
+            groupKey="case"
+            label="Local SHAP explanation"
+            labelKey="feature"
+            limit={10}
+            mode="diverging"
+            src="/data/tree-local-shap.csv"
+            valueKey="contribution"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="This feature-family heatmap provides a global view by aggregating SHAP mass into broader feature families so the explanatory pattern can be compared across models."
+          label="Results"
+          lane="screen"
+          title="Global SHAP explanations summarize which feature families remain influential across the model family."
+        >
+          <HeatmapFigure
+            label="Feature family heatmap"
+            src="/data/tree-feature-family.csv"
+            valueKey="share"
+            valueFormat="percent"
+            xKey="family"
+            xLabelMap={{
+              external: "Gold",
+              long_return: "Long return",
+              price_level: "Price level",
+              short_return: "Short return",
+              trend_ma: "Trend MA",
+              volatility: "Volatility",
+              volume_flow: "Volume flow",
+            }}
+            yKey="model"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="Ranks are shown instead of raw importance so the three tree models can be compared on the same visual footing. Lower ranks indicate stronger influence."
+          label="Results"
+          lane="screen"
+          title="The tree models still agree on a compact set of high-priority return features."
+        >
+          <HeatmapFigure
+            label="Feature rank heatmap"
+            reverseScale
+            src="/data/tree-feature-rank-heatmap.csv"
+            valueKey="rank"
+            xKey="feature"
+            xLabelMap={{
+              ATR_14: "ATR 14",
+              gold_return: "Gold return",
+              return_10d_past: "10d return",
+              return_120d_past: "120d return",
+              return_1d_past: "1d return",
+              return_30d_past: "30d return",
+              return_3d_past: "3d return",
+              return_480d_past: "480d return",
+              return_6d_past: "6d return",
+              return_7d_past: "7d return",
+            }}
+            yKey="model"
+          />
+        </FigureFrame>
+      </ArticleSection>
+
+      <ArticleSection
+        id="research-questions-analysis"
+        title="Research Questions Analysis"
+      >
+        <p>
+          The two research questions introduced earlier can be addressed using
+          the observed lag patterns in the time-series data and the SHAP
+          feature-attribution results produced by the trained models. Together,
+          these analyses allow the study to move beyond simple prediction
+          accuracy and instead evaluate which factors influence the model’s
+          forecasts and how additional variables contribute to predictive
+          performance.
+        </p>
+
+        <h3>RQ1: How can SHAP be applied to machine learning models for stock price prediction to determine which factors contribute most to the model’s predictions?</h3>
+        <p>
+          Across the SHAP visualizations used in this study, the most
+          influential features include recent lagged returns, moving-average
+          related features, and short-term return indicators. When these
+          variables dominate the feature rankings, it suggests that the model
+          behaves similarly to a momentum-sensitive forecaster, relying heavily
+          on recent market trends to generate predictions rather than treating
+          all features equally.
+        </p>
+
+        <h3>RQ2: Can the price of gold be used as a useful feature or indicator when predicting stock prices?</h3>
+        <p>
+          Gold does not become the dominant explanatory factor, but it does not
+          disappear either. In the current SHAP ranking shown in the web
+          report, gold return sits in the middle of the feature table rather
+          than at the very top or very bottom. This leads to a balanced
+          conclusion: gold price may serve as a complementary indicator, but it
+          does not replace the predictive power of recent stock-price
+          dynamics.
+        </p>
+      </ArticleSection>
+
+      <ArticleSection
+        id="why-shap-is-valuable"
+        title="Why SHAP is Valuable for Finance"
+      >
+        <p>
+          In financial analysis, prediction accuracy alone is not sufficient.
+          Analysts must also understand what factors drove a model’s prediction
+          and whether those factors make economic sense. A forecasting model
+          that predicts a future stock price without explaining the reasoning
+          behind the prediction provides limited practical value.
+        </p>
+        <p>
+          SHAP addresses this problem by decomposing each prediction into
+          feature-level contributions. Instead of returning a single forecast
+          value, the model output can be broken down into components that show
+          how each input feature moved the prediction upward or downward
+          relative to a baseline. This framework is particularly useful in
+          finance because it allows analysts to verify whether the model
+          behaves in a financially plausible way.
+        </p>
+        <p>In practical applications, SHAP provides several concrete benefits for financial analysis:</p>
+        <ol className="article-list">
+          <li>
+            <strong>Interpretation of model behavior</strong> – Analysts can
+            identify which variables consistently influence predictions and
+            determine whether the model relies on sensible financial signals.
+          </li>
+          <li>
+            <strong>Model comparison beyond accuracy</strong> – Competing
+            models can be evaluated not only by forecast error but also by
+            examining how their feature contributions differ.
+          </li>
+          <li>
+            <strong>Detection of unstable predictors</strong> – SHAP can reveal
+            when a model relies excessively on noisy or weakly justified
+            indicators.
+          </li>
+        </ol>
+        <p>
+          Because of these capabilities, SHAP allows researchers and
+          practitioners to evaluate models not only in terms of predictive
+          performance, but also in terms of transparency and economic
+          interpretability, which are critical for applying machine learning in
+          real financial contexts.
+        </p>
+      </ArticleSection>
+
+      <ArticleSection id="conclusion" title="Conclusion">
+        <p>
+          This report demonstrates how machine learning and SHAP-based
+          interpretability can be studied together in a financial context. By
+          combining forecasting models, technical indicators, and feature-level
+          explanations, the study emphasizes that predictive performance and
+          interpretability should be examined together rather than separately.
+        </p>
+        <p>
+          In the context of banking stock prediction, this makes the analysis
+          more transparent and more useful for students and practitioners who
+          need to understand not only how a model performs, but also why it
+          produces particular forecasts.
+        </p>
       </ArticleSection>
 
       <section className="backmatter l-page" id="sources">

@@ -97,8 +97,12 @@ export function RankedBarFigure({
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const values = rankedRows.map((entry) => entry.value);
-  const minValue = mode === "diverging" ? Math.min(0, ...values) : 0;
-  const maxValue = Math.max(...values);
+  const maxAbsValue =
+    mode === "diverging"
+      ? Math.max(...values.map((value) => Math.abs(value)), Number.EPSILON)
+      : 0;
+  const minValue = mode === "diverging" ? -maxAbsValue : 0;
+  const maxValue = mode === "diverging" ? maxAbsValue : Math.max(...values, 0);
   const [safeMin, safeMax] = normalizeExtent(minValue, maxValue);
   const baseline = margin.left + scaleLinear(0, safeMin, safeMax, plotWidth);
   const ticks = buildTicks(safeMin, safeMax, 5);
@@ -106,7 +110,11 @@ export function RankedBarFigure({
   return (
     <div className="ranked-bar-figure">
       {groupKey && groups.length > 1 ? (
-        <div className="csv-figure__legend" role="group" aria-label="Group filter">
+        <div
+          className="csv-figure__legend ranked-bar-figure__legend"
+          role="group"
+          aria-label="Group filter"
+        >
           {groups.map((groupName, index) => (
             <button
               className={`csv-legend-button${activeGroup === groupName ? " is-active" : ""}`}

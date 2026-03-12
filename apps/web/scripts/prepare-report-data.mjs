@@ -709,12 +709,18 @@ function buildTreeFeatureRankHeatmap(shapByModel) {
 
 function buildTreeLocalShap(rows, stockDates) {
   const cases = [
-    { label: "Bullish sample", sampleIndex: 316 },
-    { label: "Bearish sample", sampleIndex: 644 },
+    { sampleIndex: 316 },
+    { sampleIndex: 644 },
   ];
 
   return cases.flatMap((entry) => {
     const row = rows[entry.sampleIndex];
+    const totalContribution = Object.entries(row)
+      .filter(([feature]) => feature !== "sample_index")
+      .reduce((sum, [, value]) => sum + Number(value), 0);
+    const directionLabel =
+      totalContribution >= 0 ? "Positive-contribution case" : "Negative-contribution case";
+    const caseLabel = `${directionLabel} · ${stockDates[entry.sampleIndex] ?? `sample ${entry.sampleIndex + 1}`}`;
     const features = Object.entries(row)
       .filter(([feature]) => feature !== "sample_index")
       .map(([feature, value]) => ({
@@ -725,7 +731,7 @@ function buildTreeLocalShap(rows, stockDates) {
       .slice(0, 10);
 
     return features.map((featureEntry, index) => ({
-      case: entry.label,
+      case: caseLabel,
       contribution: formatNumber(featureEntry.contribution),
       date: stockDates[entry.sampleIndex] ?? "",
       feature: featureEntry.feature,

@@ -822,6 +822,10 @@ code {
   stroke-width: 1.2;
 }
 
+.ranked-bar-figure__legend {
+  justify-content: center;
+}
+
 .ranked-bar__bar,
 .heatmap-chart__cell,
 .timeline-chart__bar {

@@ -13,13 +13,13 @@ export const reportMeta: ReportMeta = {
   department: "Department of Computer Science",
   reportLabel: "Final Report",
   title:
-    "Predicting and Explaining Stock Prices with Machine Learning: A SHAP-Based Study on the Banking Sector Index",
+    "Predicting and Explaining Stock Prices with Machine Learning: A SHAP-Based Study on Banking Stock",
   dek:
-    "An educational report on how SHAP can be used to interpret machine learning models built on an equal-weighted Vietnamese banking sector index and an additional gold signal.",
+    "An educational report on stock prediction, technical indicators, and SHAP-based interpretability using a Banking Sector Index constructed from five major Vietnamese commercial banks and a synthetic gold signal.",
   authors: [
     { name: "Bui Duc Xuan", studentId: "10422085" },
     { name: "Truong Hao Nhien", studentId: "10422062" },
-    { name: "Tran Hai Duong", studentId: "10422050" },
+    { name: "Tran Hai Duong", studentId: "10422021" },
   ],
   affiliation: "Vietnamese - German University",
   supervisor: "Dr. Dinh Hai Dung",
@@ -33,6 +33,10 @@ export const reportMeta: ReportMeta = {
     { id: "technical-indicators", label: "Technical Indicators in Finance" },
     { id: "explainable-ai-shap", label: "Explainable AI and SHAP" },
     { id: "data-collection-processing", label: "Data Collection and Processing" },
+    { id: "results", label: "Results" },
+    { id: "research-questions-analysis", label: "Research Questions Analysis" },
+    { id: "why-shap-is-valuable", label: "Why SHAP is Valuable for Finance" },
+    { id: "conclusion", label: "Conclusion" },
     { id: "sources", label: "References" },
   ],
 };
