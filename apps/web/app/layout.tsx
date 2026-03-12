@@ -17,9 +17,9 @@ const sans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Distill-Inspired Report Template",
+  title: "General Study Report",
   description:
-    "A simple long-form report template with Distill-inspired layout lanes and interactive CSV figures.",
+    "Predicting and Explaining Stock Prices with Machine Learning: A SHAP-Based Study on FPT Stock",
 };
 
 export const viewport: Viewport = {
