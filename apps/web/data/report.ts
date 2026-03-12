@@ -7,7 +7,7 @@ export const reportMeta: ReportMeta = {
   department: "Department of Computer Science",
   reportLabel: "Final Report",
   title: "Predicting and Explaining Stock Prices with Machine Learning: A SHAP-Based Study on FPT Stock",
-  dek: "An educational study using fake but internally consistent stock-market data to compare forecasting models and explain predictions with SHAP, with special attention to whether gold price contributes useful predictive signal.",
+  dek: "A dual-family report that pairs Linear, DLinear, and NLinear with DeepExplainer, then adds LightGBM, RandomForest, and XGBoost baselines interpreted through TreeExplainer.",
   authors: [
     { name: "Bui Duc Xuan", studentId: "10422085" },
     { name: "Truong Hao Nhien", studentId: "10422062" },
@@ -17,20 +17,16 @@ export const reportMeta: ReportMeta = {
   supervisor: "Dr. Dinh Hai Dung",
   published: "Mar. 11, 2026",
   abstract:
-    "This report studies how machine learning can be used to forecast FPT stock prices while remaining interpretable enough for finance students and practitioners. The reported figures are rendered from illustrative CSV datasets prepared for this template, so the visualizations are real even though the underlying values are synthetic.",
+    "This report keeps the FPT-focused presentation, but the current workspace now exposes two complementary evidence streams: linear-family report exports already prepared for the main study, and tree-based baseline exports rebuilt from the banking-and-gold notebook in the repository. The article therefore separates shared data figures, DeepExplainer results for Linear, DLinear, and NLinear, and TreeExplainer baselines for RandomForest, XGBoost, and LightGBM.",
   toc: [
     { id: "introduction", label: "Introduction" },
-    { id: "background", label: "Background Concepts" },
-    { id: "background-ml", label: "Time-Series Forecasting" },
-    { id: "shap", label: "Explainable AI and SHAP" },
-    { id: "data", label: "Data Collection and Processing" },
-    { id: "applying-shap", label: "Applying SHAP to the Model" },
-    { id: "interpreting", label: "Interpreting SHAP Values" },
-    { id: "results", label: "Results" },
+    { id: "data-features", label: "Data and Feature Engineering" },
+    { id: "model-families", label: "Model Families" },
+    { id: "deep-explainer", label: "DeepExplainer for Linears" },
+    { id: "tree-explainer", label: "TreeExplainer for Trees" },
     { id: "research-questions", label: "Research Question Analysis" },
-    { id: "why-shap", label: "Why SHAP is Valuable for Finance" },
-    { id: "sources", label: "References and Notes" },
     { id: "conclusion", label: "Conclusion" },
+    { id: "sources", label: "References and Notes" },
   ],
 };
 
@@ -38,28 +34,28 @@ export const citationItems: CitationItem[] = loadCitationItems();
 
 export const footnoteItems: FootnoteItem[] = [
   {
-    id: "synthetic-signal",
+    id: "gold-proxy",
     index: 1,
     text:
-      "The gold series used in this template is illustrative only. It exists to demonstrate how an external macro feature could be discussed before real experimental outputs are available.",
+      "The shared market-context figures rebuild the exported gold_return signal exactly as it exists in the workspace. It should be read as the currently available gold proxy rather than a cleaned standalone commodity benchmark.",
   },
 ];
 
 export const sourceItems: SourceItem[] = [
   {
-    title: "FPT stock dataset (template placeholder)",
+    title: "Linear-family report exports",
     detail:
-      "Replace the synthetic price series in apps/web/public/data with your cleaned historical FPT market data.",
+      "The Linear, DLinear, and NLinear figures come from the current CSV bundle in apps/web/public/data.",
   },
   {
-    title: "Gold price series (template placeholder)",
+    title: "Banking-and-gold notebook exports",
     detail:
-      "Replace the synthetic gold signal with the external commodity series or macro indicator used in your experiment.",
+      "The tree-family baselines and shared data figures are rebuilt from apps/web/public/data/raw and the notebook outputs stored in content/general_study_banking_gold_ML.ipynb.",
   },
   {
-    title: "SHAP",
+    title: "SHAP and Explainers",
     detail:
-      "Lundberg and Lee's SHAP framework remains the conceptual basis for the explanatory analysis in this report.",
+      "DeepExplainer is retained for the linear family and TreeExplainer is used for the tree baselines, while the article keeps the shared SHAP vocabulary for both groups.",
     href: "https://shap.readthedocs.io/",
   },
   {

@@ -603,6 +603,98 @@ code {
   font-family: var(--font-sans), sans-serif;
 }
 
+.ranked-bar-figure,
+.heatmap-figure,
+.timeline-figure {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ranked-bar-chart,
+.heatmap-chart,
+.timeline-chart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ranked-bar__grid line,
+.timeline-chart__grid line {
+  stroke: #eaeaea;
+  stroke-width: 1;
+}
+
+.ranked-bar__grid text,
+.heatmap-chart__label,
+.heatmap-chart__value,
+.timeline-chart__grid text,
+.timeline-chart__label,
+.timeline-chart__value {
+  fill: var(--muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+}
+
+.ranked-bar__label,
+.timeline-chart__label {
+  text-anchor: end;
+}
+
+.ranked-bar__baseline {
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 1.2;
+}
+
+.ranked-bar__bar,
+.heatmap-chart__cell,
+.timeline-chart__bar {
+  cursor: pointer;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.ranked-bar__bar {
+  opacity: 0.9;
+}
+
+.ranked-bar__bar.is-active,
+.heatmap-chart__cell.is-active,
+.timeline-chart__bar.is-active {
+  opacity: 1;
+}
+
+.ranked-bar__value {
+  fill: #404040;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+  dominant-baseline: middle;
+  text-anchor: start;
+}
+
+.heatmap-chart__label {
+  text-anchor: middle;
+}
+
+.heatmap-chart__label--row {
+  text-anchor: end;
+}
+
+.heatmap-chart__value {
+  fill: #2d2d2d;
+  font-size: 10px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.timeline-chart__bar {
+  fill: rgba(36, 87, 166, 0.82);
+}
+
+.timeline-chart__value {
+  fill: #404040;
+}
+
 .source-list {
   display: grid;
   gap: 1rem;

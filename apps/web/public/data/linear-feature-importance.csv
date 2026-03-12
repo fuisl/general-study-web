@@ -1,0 +1,11 @@
+feature,importance
+Lagged close,0.182
+MA20 gap,0.141
+5-day return,0.113
+RSI14,0.095
+Volume ratio,0.072
+Gold return,0.061
+Rolling volatility,0.054
+High-low spread,0.048
+VNIndex return,0.039
+Open-close gap,0.031

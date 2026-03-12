@@ -1,0 +1,4 @@
+model,rmse,mae,r2,direction_acc
+XGBoost,0.0326,0.0228,-0.0474,0.5168
+LightGBM,0.0327,0.0227,-0.0387,0.5128
+RandomForest,0.0345,0.0246,-0.1341,0.4707

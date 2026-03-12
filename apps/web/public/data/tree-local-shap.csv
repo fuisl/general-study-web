@@ -1,0 +1,21 @@
+model,case,feature,contribution,rank,sample_index,date
+LightGBM,Bullish sample,return_3d_past,0.403268,1,316,2018-07-05
+LightGBM,Bullish sample,return_1d_past,0.39827,2,316,2018-07-05
+LightGBM,Bullish sample,return_5d_past,0.299385,3,316,2018-07-05
+LightGBM,Bullish sample,return_7d_past,0.204767,4,316,2018-07-05
+LightGBM,Bullish sample,return_2d_past,0.163887,5,316,2018-07-05
+LightGBM,Bullish sample,return_10d_past,0.153775,6,316,2018-07-05
+LightGBM,Bullish sample,return_20d_past,0.114643,7,316,2018-07-05
+LightGBM,Bullish sample,return_120d_past,0.094701,8,316,2018-07-05
+LightGBM,Bullish sample,return_6d_past,0.093474,9,316,2018-07-05
+LightGBM,Bullish sample,KAMA_10,0.083932,10,316,2018-07-05
+LightGBM,Bearish sample,return_30d_past,-0.6478,1,644,2020-03-06
+LightGBM,Bearish sample,ATR_14,-0.262747,2,644,2020-03-06
+LightGBM,Bearish sample,return_10d_past,-0.233175,3,644,2020-03-06
+LightGBM,Bearish sample,return_20d_past,-0.22141,4,644,2020-03-06
+LightGBM,Bearish sample,return_480d_past,-0.162207,5,644,2020-03-06
+LightGBM,Bearish sample,return_3d_past,-0.126147,6,644,2020-03-06
+LightGBM,Bearish sample,return_5d_past,-0.120373,7,644,2020-03-06
+LightGBM,Bearish sample,return_1d_past,-0.117935,8,644,2020-03-06
+LightGBM,Bearish sample,return_7d_past,-0.107247,9,644,2020-03-06
+LightGBM,Bearish sample,OBV,-0.107012,10,644,2020-03-06

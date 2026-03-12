@@ -1,0 +1,15 @@
+feature,case,contribution
+Lag close t-1,Bullish sample,0.62
+MA20 gap,Bullish sample,0.38
+5-day return,Bullish sample,0.24
+Volume ratio,Bullish sample,0.12
+Gold return,Bullish sample,0.09
+Rolling volatility,Bullish sample,-0.16
+RSI14,Bullish sample,-0.05
+Lag close t-1,Bearish sample,-0.58
+MA20 gap,Bearish sample,-0.31
+5-day return,Bearish sample,-0.21
+Volume ratio,Bearish sample,-0.09
+Gold return,Bearish sample,-0.06
+Rolling volatility,Bearish sample,0.19
+RSI14,Bearish sample,0.08
