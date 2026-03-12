@@ -12,7 +12,7 @@
   --layout-gap: clamp(1.25rem, 2vw, 2rem);
   --body-max: 39rem;
   --page-max: 53rem;
-  --screen-max: 60rem;
+  --screen-max: 68rem;
   --header-max: min(80vw, 68rem);
   --meta-max: min(72vw, 58rem);
   --shell-max: 58rem;

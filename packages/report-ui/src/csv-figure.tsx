@@ -13,6 +13,18 @@ type CsvFigureProps = {
   defaultY?: string;
   defaultColor?: string;
   controls?: Array<"view" | "x" | "y" | "series">;
+  chartConfig?: {
+    activePointRadius?: number;
+    height?: number;
+    lineWidth?: number;
+    maxXTicks?: number;
+    maxYTicks?: number;
+    pointRadius?: number;
+    rotateXLabels?: boolean;
+    showPoints?: boolean;
+    width?: number;
+    xTickFormat?: "raw" | "ym" | "ymd-short";
+  };
   label?: string;
   showLegend?: boolean;
 };
@@ -21,6 +33,7 @@ const ALL_SERIES = "__all__";
 const palette = ["#2457a6", "#2c7a7b", "#a4582f", "#6b4fb3", "#c17f16"];
 
 export function CsvFigure({
+  chartConfig,
   controls = ["view", "x", "y", "series"],
   src,
   defaultView = "line",
@@ -148,8 +161,8 @@ export function CsvFigure({
         ? "line"
         : view;
 
-  const width = 760;
-  const height = 390;
+  const width = chartConfig?.width ?? 760;
+  const height = chartConfig?.height ?? 390;
   const margin = { top: 24, right: 18, bottom: 66, left: 58 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
@@ -189,12 +202,18 @@ export function CsvFigure({
     xNumericValues.length ? Math.min(...xNumericValues) : 0,
     xNumericValues.length ? Math.max(...xNumericValues) : 1,
   );
-  const yTicks = buildTicks(safeYMin, safeYMax, 5);
+  const yTicks = buildTicks(safeYMin, safeYMax, chartConfig?.maxYTicks ?? 5);
   const baselineY =
     margin.top + plotHeight - scaleLinear(0, safeYMin, safeYMax, plotHeight);
   const numberFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   });
+  const pointRadius =
+    chartConfig?.pointRadius ?? (xCategories.length > 40 ? 3.2 : 4.5);
+  const activePointRadius =
+    chartConfig?.activePointRadius ?? pointRadius + 1.5;
+  const lineWidth = chartConfig?.lineWidth ?? 2;
+  const showPoints = chartConfig?.showPoints ?? true;
 
   const lineSeries = (currentColor ? visibleSeries : ["All"]).map((seriesName, index) => {
     const seriesRows = currentColor
@@ -357,11 +376,14 @@ export function CsvFigure({
           </g>
 
           {renderXAxisLabels({
+            maxTicks: chartConfig?.maxXTicks,
             margin,
             plotHeight,
             plotWidth,
+            rotateLabels: chartConfig?.rotateXLabels,
             safeXMax,
             safeXMin,
+            tickFormat: chartConfig?.xTickFormat,
             values: currentView === "bar" ? barData.map((bar) => bar.label) : xCategories,
             xIsNumeric,
           })}
@@ -391,40 +413,42 @@ export function CsvFigure({
                         return `${index === 0 ? "M" : "L"} ${x} ${y}`;
                       })
                       .join(" ")}
-                    style={{ stroke: series.color }}
+                    style={{ stroke: series.color, strokeWidth: lineWidth }}
                   />
-                  {series.points.map((point) => {
-                    const x = getXPosition({
-                      categories: xCategories,
-                      marginLeft: margin.left,
-                      plotWidth,
-                      safeXMax,
-                      safeXMin,
-                      value: point.xValue,
-                      valueLabel: point.xLabel,
-                      xIsNumeric,
-                    });
-                    const y =
-                      margin.top +
-                      plotHeight -
-                      scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
-                    const isActive = inspectedRow === point.row;
+                  {showPoints
+                    ? series.points.map((point) => {
+                        const x = getXPosition({
+                          categories: xCategories,
+                          marginLeft: margin.left,
+                          plotWidth,
+                          safeXMax,
+                          safeXMin,
+                          value: point.xValue,
+                          valueLabel: point.xLabel,
+                          xIsNumeric,
+                        });
+                        const y =
+                          margin.top +
+                          plotHeight -
+                          scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                        const isActive = inspectedRow === point.row;
 
-                    return (
-                      <circle
-                        aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
-                        className={`csv-point${isActive ? " is-active" : ""}`}
-                        cx={x}
-                        cy={y}
-                        key={`${series.name}-${point.xLabel}-${point.yValue}`}
-                        onFocus={() => setInspectedRow(point.row)}
-                        onMouseEnter={() => setInspectedRow(point.row)}
-                        r={isActive ? 6 : 4.5}
-                        style={{ fill: series.color }}
-                        tabIndex={0}
-                      />
-                    );
-                  })}
+                        return (
+                          <circle
+                            aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
+                            className={`csv-point${isActive ? " is-active" : ""}`}
+                            cx={x}
+                            cy={y}
+                            key={`${series.name}-${point.xLabel}-${point.yValue}`}
+                            onFocus={() => setInspectedRow(point.row)}
+                            onMouseEnter={() => setInspectedRow(point.row)}
+                            r={isActive ? activePointRadius : pointRadius}
+                            style={{ fill: series.color }}
+                            tabIndex={0}
+                          />
+                        );
+                      })
+                    : null}
                 </g>
               ))
             : null}
@@ -449,7 +473,7 @@ export function CsvFigure({
                     key={index}
                     onFocus={() => setInspectedRow(point.row)}
                     onMouseEnter={() => setInspectedRow(point.row)}
-                    r={isActive ? 6 : 4.5}
+                    r={isActive ? activePointRadius : pointRadius}
                     style={{ fill: point.color }}
                     tabIndex={0}
                   />
@@ -567,24 +591,30 @@ function Control({
 }
 
 function renderXAxisLabels({
+  maxTicks,
   margin,
   plotHeight,
   plotWidth,
+  rotateLabels,
   safeXMax,
   safeXMin,
+  tickFormat,
   values,
   xIsNumeric,
 }: {
+  maxTicks?: number;
   margin: { top: number; right: number; bottom: number; left: number };
   plotHeight: number;
   plotWidth: number;
+  rotateLabels?: boolean;
   safeXMax: number;
   safeXMin: number;
+  tickFormat?: "raw" | "ym" | "ymd-short";
   values: string[];
   xIsNumeric: boolean;
 }) {
   if (xIsNumeric) {
-    return buildTicks(safeXMin, safeXMax, 5).map((tick) => {
+    return buildTicks(safeXMin, safeXMax, maxTicks ?? 5).map((tick) => {
       const x = margin.left + scaleLinear(tick, safeXMin, safeXMax, plotWidth);
 
       return (
@@ -603,9 +633,23 @@ function renderXAxisLabels({
     });
   }
 
-  const shouldRotate = values.length > 6 || values.some((value) => value.length > 10);
+  const labelLimit = Math.max(maxTicks ?? 10, 2);
+  const visibleIndexes =
+    values.length <= labelLimit
+      ? values.map((_, index) => index)
+      : Array.from(
+          new Set([
+            ...values
+              .map((_, index) => index)
+              .filter((index) => index % Math.ceil((values.length - 1) / (labelLimit - 1)) === 0),
+            values.length - 1,
+          ]),
+        );
+  const shouldRotate =
+    rotateLabels ?? (visibleIndexes.length > 6 || values.some((value) => value.length > 10));
 
-  return values.map((value, index) => {
+  return visibleIndexes.map((index) => {
+    const value = values[index];
     const step = plotWidth / Math.max(values.length, 1);
     const x = margin.left + (index + 0.5) * step;
     const y = margin.top + plotHeight + (shouldRotate ? 30 : 24);
@@ -624,7 +668,7 @@ function renderXAxisLabels({
           x={shouldRotate ? 0 : x}
           y={shouldRotate ? 0 : y}
         >
-          {value}
+          {formatTickLabel(value, tickFormat)}
         </text>
       </g>
     );
@@ -785,4 +829,23 @@ function formatShortNumber(value: number) {
   });
 
   return formatter.format(value);
+}
+
+function formatTickLabel(value: string, tickFormat: "raw" | "ym" | "ymd-short" = "raw") {
+  if (tickFormat === "raw") {
+    return value;
+  }
+
+  if (tickFormat === "ym") {
+    return /^\d{4}-\d{2}(-\d{2})?$/.test(value) ? value.slice(0, 7) : value;
+  }
+
+  if (tickFormat === "ymd-short") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value.slice(2);
+    }
+    return value;
+  }
+
+  return value;
 }

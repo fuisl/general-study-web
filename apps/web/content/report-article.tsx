@@ -70,6 +70,16 @@ export function ReportArticle() {
         title="The available workspace already combines a rebased stock basket and an exported gold proxy."
       >
         <CsvFigure
+          chartConfig={{
+            height: 440,
+            lineWidth: 2.2,
+            maxXTicks: 10,
+            maxYTicks: 5,
+            pointRadius: 2.6,
+            rotateXLabels: false,
+            width: 980,
+            xTickFormat: "ym",
+          }}
           controls={[]}
           defaultColor="series"
           defaultView="line"
@@ -104,10 +114,21 @@ export function ReportArticle() {
       <FigureFrame
         caption="The final year of the exported dataset is shown so the trend estimators stay readable. KAMA, EMA, and SMA compress the raw movement into smoother trajectories that can later be interpreted by either explainer family."
         label="Shared data"
-        lane="page"
+        lane="screen"
         title="The engineered features begin with trend-following views of the same underlying price path."
       >
         <CsvFigure
+          chartConfig={{
+            height: 440,
+            lineWidth: 1.9,
+            maxXTicks: 6,
+            maxYTicks: 5,
+            pointRadius: 2.4,
+            rotateXLabels: false,
+            showPoints: false,
+            width: 980,
+            xTickFormat: "ym",
+          }}
           controls={[]}
           defaultColor="series"
           defaultView="line"
@@ -216,6 +237,14 @@ export function ReportArticle() {
         title="The sequence-model track still includes an explicit prediction trace against the observed path."
       >
         <CsvFigure
+          chartConfig={{
+            height: 430,
+            maxXTicks: 12,
+            maxYTicks: 5,
+            pointRadius: 3.2,
+            rotateXLabels: false,
+            width: 980,
+          }}
           controls={[]}
           defaultColor="series"
           defaultView="line"
