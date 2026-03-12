@@ -118,6 +118,57 @@ export function ReportArticle() {
             defaultView="line"
             defaultX="date"
             defaultY="index_value"
+            seriesStyleMap={{
+              "Banking basket": {
+                color: "#2457a6",
+                drawOrder: 90,
+                legendOrder: 1,
+                lineWidth: 2.5,
+                mutedColor: "rgba(88, 107, 140, 0.44)",
+              },
+              BID: {
+                color: "#c8ccd1",
+                drawOrder: 10,
+                legendOrder: 3,
+                lineWidth: 1.55,
+                mutedColor: "rgba(200, 204, 209, 0.5)",
+              },
+              CTG: {
+                color: "#cfc7bf",
+                drawOrder: 11,
+                legendOrder: 4,
+                lineWidth: 1.55,
+                mutedColor: "rgba(207, 199, 191, 0.5)",
+              },
+              Gold: {
+                color: "#c59a16",
+                drawOrder: 91,
+                legendOrder: 2,
+                lineWidth: 2.4,
+                mutedColor: "rgba(165, 138, 55, 0.46)",
+              },
+              MBB: {
+                color: "#cbc6d6",
+                drawOrder: 12,
+                legendOrder: 5,
+                lineWidth: 1.55,
+                mutedColor: "rgba(203, 198, 214, 0.5)",
+              },
+              STB: {
+                color: "#d3cbb9",
+                drawOrder: 13,
+                legendOrder: 6,
+                lineWidth: 1.55,
+                mutedColor: "rgba(211, 203, 185, 0.5)",
+              },
+              VCB: {
+                color: "#c4ccd8",
+                drawOrder: 14,
+                legendOrder: 7,
+                lineWidth: 1.55,
+                mutedColor: "rgba(196, 204, 216, 0.5)",
+              },
+            }}
             showLegend
             src="/data/market-context.csv"
           />

@@ -26,6 +26,17 @@ type CsvFigureProps = {
     xTickFormat?: "raw" | "ym" | "ymd-short";
   };
   label?: string;
+  seriesStyleMap?: Record<
+    string,
+    {
+      color?: string;
+      drawOrder?: number;
+      legendOrder?: number;
+      lineWidth?: number;
+      mutedColor?: string;
+      pointColor?: string;
+    }
+  >;
   showLegend?: boolean;
 };
 
@@ -41,6 +52,7 @@ export function CsvFigure({
   defaultY,
   defaultColor,
   label = "Interactive CSV chart",
+  seriesStyleMap,
   showLegend = true,
 }: CsvFigureProps) {
   const [rows, setRows] = useState<CsvRow[]>([]);
@@ -170,9 +182,19 @@ export function CsvFigure({
   const plotHeight = height - margin.top - margin.bottom;
   const xIsNumeric = numericColumns.includes(currentX);
   const seriesNames = currentColor ? uniqueValues(rows, currentColor) : [];
+  const sortedSeriesNames = [...seriesNames].sort((left, right) => {
+    const leftLegendOrder = getSeriesStyle(left).legendOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightLegendOrder = getSeriesStyle(right).legendOrder ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftLegendOrder !== rightLegendOrder) {
+      return leftLegendOrder - rightLegendOrder;
+    }
+
+    return seriesNames.indexOf(left) - seriesNames.indexOf(right);
+  });
   const focusedSeries =
     hoveredSeries ?? (currentColor && activeSeries !== ALL_SERIES ? activeSeries : null);
-  const visibleSeries = seriesNames;
+  const visibleSeries = sortedSeriesNames;
   const xCategories = uniqueValues(rows, currentX);
   const filteredRows =
     currentView === "bar" && currentColor && activeSeries !== ALL_SERIES
@@ -218,6 +240,22 @@ export function CsvFigure({
   const lineWidth = chartConfig?.lineWidth ?? 2;
   const showPoints = chartConfig?.showPoints ?? true;
 
+  function getSeriesStyle(seriesName: string) {
+    return seriesStyleMap?.[seriesName] ?? {};
+  }
+
+  function getSeriesColor(seriesName: string, fallbackIndex: number) {
+    return getSeriesStyle(seriesName).color ?? palette[fallbackIndex % palette.length];
+  }
+
+  function getSeriesPointColor(seriesName: string, fallbackIndex: number) {
+    return getSeriesStyle(seriesName).pointColor ?? getSeriesColor(seriesName, fallbackIndex);
+  }
+
+  function getSeriesMutedColor(seriesName: string) {
+    return getSeriesStyle(seriesName).mutedColor ?? "rgba(154, 154, 154, 0.82)";
+  }
+
   const lineSeries = (currentColor ? visibleSeries : ["All"]).map((seriesName, index) => {
     const seriesRows = currentColor
       ? rows.filter((row) => row[currentColor] === seriesName)
@@ -249,11 +287,22 @@ export function CsvFigure({
       });
 
     return {
-      color: palette[index % palette.length],
+      color: getSeriesColor(seriesName, index),
+      drawOrder: getSeriesStyle(seriesName).drawOrder ?? 0,
       isFocused: !focusedSeries || seriesName === focusedSeries,
+      lineWidthOverride: getSeriesStyle(seriesName).lineWidth,
       name: seriesName,
       points,
     };
+  }).sort((left, right) => {
+    const leftPriority = left.drawOrder + (left.isFocused ? 1000 : 0);
+    const rightPriority = right.drawOrder + (right.isFocused ? 1000 : 0);
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    return visibleSeries.indexOf(left.name) - visibleSeries.indexOf(right.name);
   });
 
   const scatterPoints = rows
@@ -268,7 +317,10 @@ export function CsvFigure({
       return {
         color:
           currentColor && row[currentColor]
-            ? palette[seriesNames.indexOf(row[currentColor]) % palette.length]
+            ? getSeriesPointColor(
+                row[currentColor],
+                seriesNames.indexOf(row[currentColor]),
+              )
             : palette[0],
         isFocused:
           !focusedSeries || !currentColor || row[currentColor] === focusedSeries,
@@ -435,8 +487,12 @@ export function CsvFigure({
                       })
                       .join(" ")}
                     style={{
-                      stroke: series.isFocused ? series.color : "rgba(142, 142, 142, 0.82)",
-                      strokeWidth: series.isFocused ? lineWidth + 0.2 : Math.max(lineWidth - 0.2, 1.2),
+                      stroke: series.isFocused
+                        ? series.color
+                        : getSeriesMutedColor(series.name),
+                      strokeWidth: series.isFocused
+                        ? (series.lineWidthOverride ?? lineWidth) + 0.2
+                        : Math.max((series.lineWidthOverride ?? lineWidth) - 0.2, 1.2),
                     }}
                   />
                   {showPoints
@@ -472,7 +528,12 @@ export function CsvFigure({
                               onMouseLeave={clearPointHover}
                               r={isActive ? activePointRadius : pointRadius}
                               style={{
-                                fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
+                                fill: series.isFocused
+                                  ? getSeriesPointColor(
+                                      series.name,
+                                      seriesNames.indexOf(series.name),
+                                    )
+                                  : getSeriesMutedColor(series.name),
                               }}
                               tabIndex={0}
                             />
@@ -526,7 +587,13 @@ export function CsvFigure({
                                   onFocus={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
                                   r={activePointRadius}
                                   style={{
-                                    fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
+                                    fill: series.isFocused
+                                      ? getSeriesPointColor(
+                                          series.name,
+                                          seriesNames.indexOf(series.name),
+                                        )
+                                      : getSeriesMutedColor(series.name),
+                                    pointerEvents: "none",
                                   }}
                                   tabIndex={0}
                                 />
@@ -568,7 +635,11 @@ export function CsvFigure({
                       onMouseLeave={clearPointHover}
                       r={isActive ? activePointRadius : pointRadius}
                       style={{
-                        fill: point.isFocused ? point.color : "rgba(154, 154, 154, 0.82)",
+                        fill: point.isFocused
+                          ? point.color
+                          : currentColor
+                            ? getSeriesMutedColor(point.row[currentColor])
+                            : "rgba(154, 154, 154, 0.82)",
                       }}
                       tabIndex={0}
                     />
@@ -647,7 +718,7 @@ export function CsvFigure({
           >
             All
           </button>
-          {seriesNames.map((seriesName, index) => (
+          {sortedSeriesNames.map((seriesName, index) => (
             <button
               className={`csv-legend-button${activeSeries === seriesName ? " is-active" : ""}`}
               key={seriesName}
@@ -659,7 +730,7 @@ export function CsvFigure({
               <span
                 aria-hidden="true"
                 className="csv-legend-button__swatch"
-                style={{ backgroundColor: palette[index % palette.length] }}
+                style={{ backgroundColor: getSeriesColor(seriesName, index) }}
               />
               {seriesName}
             </button>

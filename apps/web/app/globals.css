@@ -13,6 +13,7 @@
   --body-max: 39rem;
   --page-max: 53rem;
   --screen-max: 68rem;
+  --figure-breakout-extra: clamp(8rem, 12vw, 16rem);
   --header-max: min(80vw, 68rem);
   --meta-max: min(72vw, 58rem);
   --shell-max: 58rem;
@@ -436,8 +437,11 @@ code {
 }
 
 .figure-frame {
+  width: min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem));
   margin-top: 2.5rem;
   margin-bottom: 0.6rem;
+  margin-left: calc(50% - min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem)) / 2);
+  margin-right: calc(50% - min(calc(100% + var(--figure-breakout-extra)), calc(100vw - 3rem)) / 2);
   padding: 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
@@ -702,6 +706,8 @@ code {
   font-family: var(--font-sans), sans-serif;
   font-size: 10px;
   font-weight: 600;
+  pointer-events: none;
+  user-select: none;
   paint-order: stroke;
   stroke: rgba(255, 255, 255, 0.96);
   stroke-linejoin: round;
@@ -847,6 +853,11 @@ code {
   text-anchor: middle;
 }
 
+.heatmap-chart__label--column {
+  font-size: 9px;
+  letter-spacing: -0.01em;
+}
+
 .heatmap-chart__label--row {
   text-anchor: end;
 }
@@ -861,12 +872,14 @@ code {
 .heatmap-figure__frame {
   display: flex;
   justify-content: center;
+  align-items: center;
   overflow-x: auto;
 }
 
 .heatmap-chart {
-  width: auto;
-  max-width: none;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
   margin-inline: auto;
 }
 
@@ -1118,6 +1131,9 @@ code {
   }
 
   .figure-frame {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
     padding: 0.75rem;
   }
 

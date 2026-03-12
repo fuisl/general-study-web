@@ -42,7 +42,13 @@ export function RankedBarFigure({
 
   useEffect(() => {
     if (!groupKey) {
-      setActiveGroup("");
+      if (activeGroup !== "") {
+        setActiveGroup("");
+      }
+      return;
+    }
+
+    if (activeGroup && groups.includes(activeGroup)) {
       return;
     }
 
@@ -52,7 +58,7 @@ export function RankedBarFigure({
     }
 
     setActiveGroup(groups[0] ?? "");
-  }, [defaultGroup, groupKey, groups]);
+  }, [activeGroup, defaultGroup, groupKey, groups]);
 
   if (status === "loading") {
     return <div className="csv-figure__state">Loading data...</div>;
@@ -105,7 +111,10 @@ export function RankedBarFigure({
             <button
               className={`csv-legend-button${activeGroup === groupName ? " is-active" : ""}`}
               key={groupName}
-              onClick={() => setActiveGroup(groupName)}
+              onClick={() => {
+                setActiveGroup(groupName);
+                setInspectedRow(null);
+              }}
               type="button"
             >
               <span

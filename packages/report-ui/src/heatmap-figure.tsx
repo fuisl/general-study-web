@@ -170,7 +170,12 @@ export function HeatmapFigure({
             const displayLabel = xLabelMap?.[columnLabel] ?? columnLabel;
 
             return (
-              <text className="heatmap-chart__label" key={columnLabel} x={x} y={height - 10}>
+              <text
+                className="heatmap-chart__label heatmap-chart__label--column"
+                key={columnLabel}
+                x={x}
+                y={height - 10}
+              >
                 {displayLabel}
               </text>
             );
