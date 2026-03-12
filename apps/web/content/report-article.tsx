@@ -1,556 +1,631 @@
 import {
   ArticleSection,
   CsvFigure,
-  FootnoteList,
   FigureFrame,
   HeatmapFigure,
   InlineCitation,
-  InlineFootnote,
+  InteractiveTable,
   RankedBarFigure,
   ReferenceList,
   ReportShell,
   SmallMultiplesFigure,
   TimelineFigure,
 } from "@repo/report-ui";
-import { citationItems, footnoteItems, reportMeta } from "../data/report";
+import {
+  citationItems,
+  indicatorTableColumns,
+  indicatorTableRows,
+  reportMeta,
+  stockDatasetColumns,
+  stockDatasetRows,
+} from "../data/report";
+
+const citationById = Object.fromEntries(
+  citationItems.map((item) => [item.id, item]),
+);
 
 export function ReportArticle() {
   return (
     <ReportShell meta={reportMeta}>
-      <ArticleSection
-        id="introduction"
-        title="Introduction"
-        lede="Stock-price forecasting becomes more useful when the model family, the predictive result, and the explanation all remain visible at the same time. This report therefore presents a dual-family view instead of a single leaderboard."
-      >
+      <ArticleSection id="introduction" title="Introduction">
         <p>
-          Traditional stock-forecasting studies often present one model family
-          at a time. That hides an important distinction: some models are chosen
-          because they are sequence-native and easy to pair with local
-          explanations, while others are included as strong nonlinear baselines
-          that stress-test the feature set itself.
-          <InlineCitation item={citationItems[0]} />
+          Stock price prediction has long been an important topic in finance.
+          Traditional approaches typically rely on financial indicators,
+          statistical models, and expert interpretation to estimate future price
+          movements. While these methods provide structured analytical
+          frameworks, they may struggle to capture complex nonlinear
+          relationships present in financial markets. In recent years, machine
+          learning techniques have increasingly been applied to financial
+          prediction tasks because they can detect patterns in large datasets
+          that may not be visible through conventional statistical analysis.
         </p>
         <p>
-          The current workspace contains both of those strands. The linear side
-          now comes directly from the raw <strong>DeepExplainer</strong> export
-          folders for <strong>Linear / DLinear / NLinear</strong>, while the
-          banking-and-gold notebook exports add <strong>RandomForest</strong>,{" "}
-          <strong>XGBoost</strong>, and <strong>LightGBM</strong> baselines
-          interpreted through <strong>TreeExplainer</strong>. Bringing the two
-          families together creates a fuller picture, but only if the article
-          keeps their evidence streams separate rather than flattening them into
-          one metric table.
-          <InlineCitation item={citationItems[1]} />
+          Despite their predictive capabilities, many machine learning models
+          introduce a significant limitation: lack of interpretability. Complex
+          models such as ensemble methods or neural networks often behave as
+          “black boxes,” producing predictions without providing clear
+          explanations of the underlying reasoning. As a result, a model may
+          generate accurate forecasts while still remaining opaque in terms of
+          which input variables most strongly influenced the prediction.
         </p>
         <p>
-          This report therefore uses shared data figures up front, then splits
-          the modeling and explanation story into two tracks: DeepExplainer for
-          the linear family and TreeExplainer for the tree baselines. The gold
-          signal is shown exactly as it is currently exported in the workspace
-          <InlineFootnote item={footnoteItems[0]} />, and the later research
-          section compares how each family treats it.
-          <InlineCitation item={citationItems[2]} />
+          For finance students and practitioners, this opacity represents a
+          practical challenge. Financial analysis is not solely concerned with
+          generating predictions; it also requires understanding the economic
+          drivers behind those predictions. A forecasting model that predicts
+          tomorrow’s stock price is far more valuable if analysts can identify
+          which factors contributed to the prediction and evaluate whether those
+          factors are economically meaningful. Without such transparency, it
+          becomes difficult to trust or interpret the model’s outputs.
         </p>
+        <p>
+          To address this limitation, this study introduces a method from
+          Explainable Artificial Intelligence (XAI) known as SHAP (SHapley
+          Additive exPlanations)
+          <InlineCitation item={citationById["lundberg-2017"]} />. By
+          decomposing predictions into feature-level contributions, SHAP
+          provides insights into how machine learning models make decisions and
+          which factors most strongly influence the output. Using historical
+          stock data from the Banking Sector Index, constructed from five major
+          Vietnamese commercial banks - Vietcombank (VCB), VietinBank (CTG),
+          BIDV (BID), MBBank (MBB), and Sacombank (STB) - this study builds
+          several time-series forecasting models and interprets their
+          predictions through SHAP analysis. In addition to traditional
+          financial features, the study also introduces a synthetic gold signal,
+          representing gold price information, to examine whether gold prices
+          may act as a useful external indicator for stock price movements.
+        </p>
+        <p>This research is guided by the following questions:</p>
         <ol className="article-list">
           <li>
-            <strong>Research Question 1.</strong> Which feature patterns recur
-            across DeepExplainer and TreeExplainer, and which are specific to
-            only one model family?
+            <strong>Research Question 1.</strong> How can SHAP be applied to
+            machine learning models for stock price prediction to determine
+            which factors contribute most to the model’s predictions?
           </li>
           <li>
-            <strong>Research Question 2.</strong> Does gold stay secondary
-            across both families, or does its importance strengthen once the
-            model class changes?
+            <strong>Research Question 2.</strong> Can the price of gold be used
+            as a useful feature or indicator when predicting stock prices?
           </li>
         </ol>
+        <p>
+          The objective of this study is primarily educational. It aims to
+          demonstrate how modern machine learning interpretability techniques
+          can be applied in a financial context, allowing students and
+          practitioners to better understand not only how predictive models
+          perform but also why they produce certain predictions.
+        </p>
+
+        <FigureFrame
+          caption="The shared market-context chart rebases the Banking Sector Index, its five constituent banks, and gold to a common base value of 100. This keeps the introductory market background aligned with the study context stated above."
+          label="Introduction"
+          lane="screen"
+          title="The banking-sector index, its five constituent banks, and gold provide the common market context for the study."
+        >
+          <CsvFigure
+            chartConfig={{
+              height: 440,
+              lineWidth: 2,
+              maxXTicks: 10,
+              maxYTicks: 5,
+              pointRadius: 2.2,
+              rotateXLabels: false,
+              showPoints: false,
+              width: 980,
+              xTickFormat: "ym",
+            }}
+            controls={[]}
+            defaultColor="series"
+            defaultView="line"
+            defaultX="date"
+            defaultY="index_value"
+            showLegend
+            src="/data/market-context.csv"
+          />
+        </FigureFrame>
       </ArticleSection>
 
-      <FigureFrame
-        caption="The chart overlays the banking basket, the five constituent bank price series, and gold. Every line is rebased to 100 at the first shared month so relative movement stays comparable before the article splits into linear-family and tree-family evidence."
-        label="Shared data"
-        lane="screen"
-        title="The available workspace now combines the banking basket, its five constituent banks, and gold in one shared market view."
-      >
-        <CsvFigure
-          chartConfig={{
-            height: 440,
-            lineWidth: 2,
-            maxXTicks: 10,
-            maxYTicks: 5,
-            pointRadius: 2.2,
-            rotateXLabels: false,
-            showPoints: false,
-            width: 980,
-            xTickFormat: "ym",
-          }}
-          controls={[]}
-          defaultColor="series"
-          defaultView="line"
-          defaultX="date"
-          defaultY="index_value"
-          showLegend
-          src="/data/market-context.csv"
-        />
-      </FigureFrame>
+      <ArticleSection id="background-concepts" title="Background Concepts">
+        <h3 id="time-series-forecasting">Machine Learning for Time-Series Forecasting</h3>
+        <p>
+          Financial markets naturally produce time-series data. In stock
+          markets, prices are observed across trading days, and each
+          observation—such as a daily closing price—is not independent. Instead,
+          it is often influenced by previous market behavior and trends.
+          Therefore, stock price prediction typically requires analyzing
+          historical patterns over time rather than treating each data point as
+          an isolated observation.
+        </p>
+        <p>
+          Time-series forecasting therefore differs from traditional supervised
+          learning tasks where observations are assumed to be independent. In
+          this type of problems, models often rely on a lookback window, where
+          information from previous time steps is used as input for predicting
+          future values. This approach allows the model to capture dependencies
+          and short-term trends in financial data.
+        </p>
+        <p>
+          Before the widespread adoption of modern machine learning methods,
+          researchers and financial analysts relied heavily on statistical
+          time-series models to forecast financial variables. Common approaches
+          include ARIMA (AutoRegressive Integrated Moving Average), linear
+          regression, and Vector AutoRegression (VAR) models. These techniques
+          are grounded in statistical theory and are specifically designed to
+          model relationships between past and future observations. ARIMA
+          models, in particular, have been widely applied for decades due to
+          their mathematical simplicity and ability to model temporal
+          dependencies in economic and financial data
+          <InlineCitation item={citationById["kontopoulou-2023"]} />.
+        </p>
+        <p>
+          However, traditional statistical models often rely on assumptions such
+          as linearity, stationarity, and predefined relationships between
+          variables. In real financial markets, price movements are influenced
+          by many interacting factors, including macroeconomic indicators,
+          investor sentiment, and global events. These interactions may lead to
+          nonlinear patterns that are difficult to capture using classical
+          statistical models. As a result, researchers have increasingly turned
+          to machine learning approaches, which can learn complex relationships
+          directly from data without requiring strong assumptions about the
+          underlying structure of the time series
+          <InlineCitation item={citationById["qian-2017"]} />.
+        </p>
+        <p>
+          Despite their advantages, many advanced deep learning models—such as
+          Recurrent Neural Networks (RNNs) or Long Short-Term Memory (LSTM)
+          networks—can be computationally expensive and may require large
+          datasets and significant training time. For educational or
+          exploratory studies, simpler neural forecasting models can provide a
+          practical alternative. Therefore, this report focuses on several
+          lightweight neural baselines as they are simpler than large recurrent
+          architectures, train faster, and still provide a meaningful
+          comparison framework.
+        </p>
+        <p>
+          To provide a broader comparison between neural and tree-based machine
+          learning approaches, this study evaluates several commonly used models
+          in time-series prediction and tabular machine learning. Each model
+          represents a different modeling philosophy, ranging from simple linear
+          projections to ensemble decision-tree methods widely used in applied
+          machine learning.
+        </p>
+        <p>
+          <strong>Linear Model</strong> – A simple linear forecasting model
+          that predicts future values using a direct linear transformation of
+          the historical lookback window. Although mathematically simple,
+          linear models can provide strong baselines for time-series
+          forecasting and help determine whether complex nonlinear architectures
+          are necessary
+          <InlineCitation item={citationById["zeng-2022"]} />.
+        </p>
+        <p>
+          <strong>DLinear (Decomposition Linear Model)</strong> – DLinear
+          separates the input time series into trend and seasonal components,
+          then applies linear layers to each component independently. This
+          decomposition allows the model to capture long-term trends while
+          maintaining a lightweight architecture suitable for efficient training
+          <InlineCitation item={citationById["zeng-2022"]} />.
+        </p>
+        <p>
+          <strong>NLinear (Normalization Linear Model)</strong> – NLinear
+          improves upon the simple linear model by normalizing the input
+          sequence relative to the most recent observation before prediction.
+          This helps stabilize training and allows the model to better adapt to
+          shifting time-series levels
+          <InlineCitation item={citationById["zeng-2022"]} />.
+        </p>
+        <p>
+          <strong>Random Forest</strong> – Random Forest is an ensemble
+          learning method that builds multiple decision trees using random
+          subsets of data and features. The final prediction is obtained by
+          averaging the outputs of the individual trees, which reduces
+          overfitting and improves generalization performance
+          <InlineCitation item={citationById["breiman-2001"]} />.
+        </p>
+        <p>
+          <strong>XGBoost</strong> – Extreme Gradient Boosting (XGBoost) is a
+          highly optimized gradient boosting algorithm that sequentially builds
+          decision trees to minimize prediction errors. Due to its efficiency,
+          scalability, and strong predictive performance, it has become one of
+          the most widely used machine learning models in data science and
+          financial prediction tasks
+          <InlineCitation item={citationById["chen-2016"]} />.
+        </p>
+        <p>
+          <strong>LightGBM</strong> – Light Gradient Boosting Machine
+          (LightGBM) is another gradient boosting framework designed for high
+          efficiency and scalability. It introduces techniques such as
+          histogram-based learning and leaf-wise tree growth, enabling faster
+          training and improved performance on large datasets
+          <InlineCitation item={citationById["ke-2017"]} />.
+        </p>
+        <p>
+          By comparing these models, the study aims to evaluate how different
+          machine learning approaches—ranging from simple linear neural
+          architectures to ensemble tree methods—perform in the context of
+          financial time-series forecasting. This comparison also provides
+          insight into the trade-offs between model complexity,
+          interpretability, and predictive performance.
+        </p>
 
-      <ArticleSection
-        id="data-features"
-        title="Data and Feature Engineering"
-        lede="Before the report reaches any model, the shared pipeline has already defined the sequence target, engineered the main indicators, and fixed the chronological split used across the exported workspace."
-      >
+        <FigureFrame
+          caption="The target profile is shown as four small multiples so the effect of extending the forecast horizon stays visually explicit. It supports the lookback-window discussion in the time-series forecasting section."
+          label="Background Concepts"
+          lane="page"
+          title="The forecasting target widens as the prediction horizon extends from day 1 to day 7."
+        >
+          <SmallMultiplesFigure
+            chartConfig={{
+              height: 220,
+              lineWidth: 2,
+              maxXTicks: 4,
+              maxYTicks: 4,
+              pointRadius: 3,
+              showPoints: true,
+            }}
+            metrics={[
+              { key: "mean_return", label: "Mean return" },
+              { key: "std_return", label: "Std. deviation" },
+              { key: "positive_share", label: "Positive share" },
+              { key: "range_return", label: "Return range" },
+            ]}
+            src="/data/forecast-horizon-profile.csv"
+            xKey="horizon_day"
+          />
+        </FigureFrame>
+
+        <h3 id="technical-indicators">Technical Indicators in Finance</h3>
         <p>
-          The raw market table still follows the familiar financial layout:
-          date, open, high, low, close, and volume. From there, the pipeline
-          derives return horizons, moving-average variants, volatility measures,
-          and volume-flow signals. Those derived variables become the common
-          substrate for both model families even if the later explainers differ.
+          In addition to research focusing on statistical and intelligent
+          approaches for financial time series forecasting, especially in stock
+          returns prediction, it is essential to apply a minimal number of input
+          features when forecasting the market trends. Introducing more input
+          features means increasing the dimensionality of the data, expanding
+          its sparsity in the data space. This leads to the exponential
+          acceleration of training data as more features are included to cover
+          every combination of feature values. Hence, it is crucial to
+          investigate the most significant technical indicators for predicting
+          stock market trends. This enhances the predictive performance of
+          machine learning (ML) models while simultaneously reducing analysis
+          time and potential risks in stock market trading and investment. By
+          emphasizing the most important indicators, traders can make more
+          informed buy and sell decisions, which can ultimately lead to
+          improved trading and investment outcomes. In this context, identifying
+          key indicators for predicting the price movements of a banking sector
+          index constructed from five major banks is important, as the index
+          serves as a representative benchmark for Vietnam’s banking sector.
         </p>
         <p>
-          The figure sequence below focuses on what is shared. The indicator
-          overlay shows how the recent price path is smoothed into trend
-          features, the horizon profile shows how dispersion grows as the target
-          moves further into the future, and the split timeline makes the
-          chronological evaluation boundary explicit.
+          To achieve this, we focused on the lagged returns and four main
+          categories of indicators: volume, volatility, trend, and momentum. We
+          aimed to identify the most significant indicators in each category,
+          providing valuable insights into profitable technical indicators that
+          have proven effective in forecasting the banking stock index.
+          Furthermore, the analysis investigates whether returns from Gold
+          Futures have any influence on the performance of the banking sector.
         </p>
+        <p>
+          The indicators in these four categories are selected based on a
+          previous study that identified the most impactful technical indicators
+          for the S&amp;P 500 Index. The selected indicators include:
+        </p>
+
+        <FigureFrame
+          caption="The line overlay keeps the indicator discussion anchored to the underlying time series. It shows how the raw close is transformed into smoother technical signals before the wider feature table is assembled."
+          label="Background Concepts"
+          lane="screen"
+          title="The technical-indicator layer begins by smoothing raw price behavior into trend-following signals."
+        >
+          <CsvFigure
+            chartConfig={{
+              height: 440,
+              lineWidth: 1.9,
+              maxXTicks: 6,
+              maxYTicks: 5,
+              pointRadius: 2.4,
+              rotateXLabels: false,
+              showPoints: false,
+              width: 980,
+              xTickFormat: "ym",
+            }}
+            controls={[]}
+            defaultColor="series"
+            defaultView="line"
+            defaultX="date"
+            defaultY="value"
+            showLegend
+            src="/data/technical-indicators.csv"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="The table preserves the indicator list from the report text while making it easier to filter by category or search by indicator name."
+          label="Background Concepts"
+          lane="screen"
+          title="The selected indicators cover momentum, trend, volatility, and volume."
+        >
+          <InteractiveTable
+            columns={indicatorTableColumns}
+            filterKey="category"
+            label="Technical indicator reference table"
+            rows={indicatorTableRows}
+            searchKeys={["indicator", "category", "description"]}
+            searchPlaceholder="Search indicators or descriptions"
+          />
+        </FigureFrame>
       </ArticleSection>
 
-      <FigureFrame
-        caption="The final year of the exported dataset is shown so the trend estimators stay readable. KAMA, EMA, and SMA compress the raw movement into smoother trajectories that can later be interpreted by either explainer family."
-        label="Shared data"
-        lane="screen"
-        title="The engineered features begin with trend-following views of the same underlying price path."
-      >
-        <CsvFigure
-          chartConfig={{
-            height: 440,
-            lineWidth: 1.9,
-            maxXTicks: 6,
-            maxYTicks: 5,
-            pointRadius: 2.4,
-            rotateXLabels: false,
-            showPoints: false,
-            width: 980,
-            xTickFormat: "ym",
-          }}
-          controls={[]}
-          defaultColor="series"
-          defaultView="line"
-          defaultX="date"
-          defaultY="value"
-          showLegend
-          src="/data/technical-indicators.csv"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="The target remains multi-step even before any model is selected. Dispersion, range, and average return all widen as the horizon extends, while the positive-share curve moves more gradually."
-        label="Shared data"
-        lane="page"
-        title="The forecasting target becomes more dispersed as the prediction horizon moves further out."
-      >
-        <SmallMultiplesFigure
-          chartConfig={{
-            height: 220,
-            lineWidth: 2,
-            maxXTicks: 4,
-            maxYTicks: 4,
-            pointRadius: 3,
-            showPoints: true,
-          }}
-          metrics={[
-            { key: "mean_return", label: "Mean return" },
-            { key: "std_return", label: "Std. deviation" },
-            { key: "positive_share", label: "Positive share" },
-            { key: "range_return", label: "Return range" },
-          ]}
-          src="/data/forecast-horizon-profile.csv"
-          xKey="horizon_day"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="The split is chronological rather than random. This is the shared evaluation backbone for the workspace, even though the model families are exported from different result bundles."
-        label="Shared data"
-        lane="page"
-        title="The report keeps training, validation, and test windows in explicit time order."
-      >
-        <TimelineFigure
-          endKey="end_date"
-          label="Chronological split"
-          labelKey="split"
-          src="/data/dataset-split.csv"
-          startKey="start_date"
-          valueKey="observations"
-        />
-      </FigureFrame>
-
-      <ArticleSection
-        id="model-families"
-        title="Model Families"
-        lede="The six-model story works only when the two families are read in parallel. The linear family remains the main forecasting track, while the tree family acts as a nonlinear baseline that tests the same feature space from a different inductive bias."
-      >
+      <ArticleSection id="explainable-ai-shap" title="Explainable AI and SHAP">
+        <h3>The Interpretability Problem</h3>
         <p>
-          The <strong>linear family</strong> consists of Linear, DLinear, and
-          NLinear. The raw export gives four DeepExplainer history windows for
-          each model, so the linear-family figures below are rebuilt around
-          explanation structure: window summaries, sample-level signed traces,
-          local lag decompositions, and lag rankings.
+          Machine learning models may achieve strong predictive performance, but
+          their internal decision-making process is often difficult to
+          interpret. This interpretability problem becomes apparent when a model
+          produces a plausible forecast without revealing the reasons behind the
+          prediction. Traditional evaluation metrics such as Mean Squared Error
+          (MSE) or Root Mean Squared Error (RMSE) can measure how close
+          predictions are to the true values, but they cannot explain why a
+          model produced a particular result.
+        </p>
+        <p>For example, a model may produce the following forecast:</p>
+        <p className="article-callout">Predicted banking-sector index tomorrow: 92.5</p>
+        <p>
+          While this output may appear reasonable, it raises several important
+          analytical questions:
+        </p>
+        <ol className="article-list">
+          <li>Was the prediction influenced primarily by recent price trends?</li>
+          <li>Did trading volume play an important role?</li>
+          <li>
+            Did external indicators, such as macroeconomic variables or
+            commodity prices, affect the prediction?
+          </li>
+        </ol>
+        <p>
+          Without additional interpretability tools, these questions remain
+          unanswered. As a result, even accurate machine learning models can be
+          difficult to trust or analyze in financial contexts where
+          understanding the drivers of predictions is often as important as the
+          predictions themselves. To address this limitation, researchers use
+          SHAP as a systematic way to explain the predictions of complex
+          models.
+        </p>
+
+        <h3>What is SHAP?</h3>
+        <p>
+          SHAP is based on the concept of Shapley values from cooperative game
+          theory, originally developed by Lloyd Shapley. In cooperative games,
+          each participant contributes to a final payoff, and Shapley values
+          provide a mathematically principled way to fairly distribute that
+          payoff among the players. SHAP applies the same principle to machine
+          learning models: each input feature is treated as a “player”
+          contributing to the final prediction, and the method estimates how
+          much each feature contributes to the output
+          <InlineCitation item={citationById["lundberg-2017"]} />.
         </p>
         <p>
-          The <strong>tree family</strong> consists of RandomForest, XGBoost,
-          and LightGBM. These baselines come from the raw notebook outputs in
-          the workspace. They do not currently include the same prediction-trace
-          bundle, but they do provide real summary metrics and full SHAP exports
-          through TreeExplainer.
+          Using this framework, SHAP decomposes a model’s prediction into a set
+          of feature-level contributions, making it possible to understand how
+          different variables influence the result. For example, a predicted
+          stock price may be interpreted as a baseline value adjusted upward or
+          downward by the influence of different features such as recent price
+          changes, technical indicators, or external economic signals.
         </p>
+        <p>SHAP provides several useful forms of interpretability:</p>
+        <ol className="article-list">
+          <li>
+            <strong>Local explanations</strong> – It explains individual
+            predictions by quantifying how each feature contributed to a
+            specific forecast.
+          </li>
+          <li>
+            <strong>Global explanations</strong> – It aggregates feature
+            contributions across many observations to identify which variables
+            are generally most influential in the model.
+          </li>
+          <li>
+            <strong>Model-agnostic interpretation</strong> – It can be applied
+            to a wide range of machine learning models, including nonlinear
+            models and ensemble methods.
+          </li>
+        </ol>
         <p>
-          Because the currently available metrics live on different target and
-          scale conventions, the report does not place all six models on one
-          shared RMSE axis. Instead, each family is summarized inside its own
-          panel and then compared qualitatively in the research-question
-          section.
+          Because of these properties, SHAP has become one of the most widely
+          used tools for interpreting machine learning models in fields such as
+          finance, healthcare, and risk analysis. In this study, SHAP is used
+          to analyze the predictions generated by the forecasting models and
+          identify which variables contribute most strongly to predicted stock
+          prices.
         </p>
+
+        <FigureFrame
+          caption="This exported local SHAP view illustrates how one prediction can be decomposed into feature-level pushes and pulls, matching the local-explanation discussion in the text."
+          label="Explainable AI"
+          lane="page"
+          title="Local SHAP explanations show how individual features contribute to a single forecast."
+        >
+          <RankedBarFigure
+            defaultGroup="Bullish sample"
+            groupKey="case"
+            label="Local SHAP explanation"
+            labelKey="feature"
+            limit={10}
+            mode="diverging"
+            src="/data/tree-local-shap.csv"
+            valueKey="contribution"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="This feature-family heatmap provides the corresponding global view. It aggregates SHAP mass into families so the broader explanatory pattern can be read across models."
+          label="Explainable AI"
+          lane="screen"
+          title="Global SHAP explanations summarize which feature families remain influential across the model family."
+        >
+          <HeatmapFigure
+            label="Feature family heatmap"
+            src="/data/tree-feature-family.csv"
+            valueKey="share"
+            valueFormat="percent"
+            xKey="family"
+            xLabelMap={{
+              external: "Gold",
+              long_return: "Long return",
+              price_level: "Price level",
+              short_return: "Short return",
+              trend_ma: "Trend MA",
+              volatility: "Volatility",
+              volume_flow: "Volume flow",
+            }}
+            yKey="model"
+          />
+        </FigureFrame>
+
+        <FigureFrame
+          caption="Ranks are shown instead of raw importance so the three tree models can be compared on the same visual footing. Lower ranks are stronger, and the chart is flipped horizontally so the compact set of return features can be scanned left-to-right."
+          label="Explainable AI"
+          lane="screen"
+          title="The tree models still agree on a compact set of high-priority return features."
+        >
+          <HeatmapFigure
+            label="Feature rank heatmap"
+            reverseScale
+            src="/data/tree-feature-rank-heatmap.csv"
+            valueKey="rank"
+            xKey="feature"
+            xLabelMap={{
+              ATR_14: "ATR 14",
+              gold_return: "Gold return",
+              return_10d_past: "10d return",
+              return_120d_past: "120d return",
+              return_1d_past: "1d return",
+              return_30d_past: "30d return",
+              return_3d_past: "3d return",
+              return_480d_past: "480d return",
+              return_6d_past: "6d return",
+              return_7d_past: "7d return",
+            }}
+            yKey="model"
+          />
+        </FigureFrame>
       </ArticleSection>
 
-      <FigureFrame
-        caption="These bars summarize the strongest normalized DeepExplainer window rather than forecast RMSE. The selector switches between mean sample |SHAP|, peak cell |SHAP|, and normalized mean |SHAP| so the three linear models can still be compared on one axis."
-        label="Linear family"
-        lane="body"
-        title="Within the most concentrated DeepExplainer window, NLinear carries the strongest attribution signal."
-      >
-        <CsvFigure
-          controls={["y"]}
-          defaultView="bar"
-          defaultX="model"
-          defaultY="mean_sample_abs"
-          showLegend={false}
-          src="/data/linear-model-metrics.csv"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="These values come from the notebook output already stored in the repository. They are shown as a separate baseline family rather than as a direct continuation of the linear-family leaderboard."
-        label="Tree family"
-        lane="body"
-        title="RandomForest, XGBoost, and LightGBM provide a nonlinear benchmark on the exported feature table."
-      >
-        <CsvFigure
-          controls={["y"]}
-          defaultView="bar"
-          defaultX="model"
-          defaultY="rmse"
-          showLegend={false}
-          src="/data/tree-model-metrics.csv"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="Each line is the signed SHAP sum across all lags and features for one explained sample in the 7-day linear bundle. The family-average trace is added as a reference so the shared turning points stay visible."
-        label="Linear family"
-        lane="screen"
-        title="The sample-wise attribution trace shows where the three linear models turn bullish or bearish."
-      >
-        <CsvFigure
-          chartConfig={{
-            height: 430,
-            lineWidth: 2.1,
-            maxXTicks: 8,
-            maxYTicks: 5,
-            pointRadius: 2.6,
-            rotateXLabels: false,
-            showPoints: false,
-            width: 980,
-          }}
-          controls={[]}
-          defaultColor="series"
-          defaultView="line"
-          defaultX="sample"
-          defaultY="signal"
-          showLegend
-          src="/data/linear-prediction-trace.csv"
-        />
-      </FigureFrame>
-
-      <ArticleSection
-        id="deep-explainer"
-        title="DeepExplainer for Linear Models"
-        lede="The linear family keeps the original interpretability frame: DeepExplainer is used to open the model, compare lookback choices, and summarize both local and global attribution patterns."
-      >
+      <ArticleSection id="data-collection-processing" title="Data Collection and Processing">
+        <h3>Stock Dataset</h3>
         <p>
-          In the rebuilt sequence-model track, the explanatory analysis now
-          starts from the four saved DeepExplainer window bundles themselves.
-          The first comparison asks which history window concentrates the most
-          normalized attribution mass, then the later plots zoom into the
-          7-day bundle where that concentration is strongest.
+          The dataset used in this study contains the historical stock data of
+          5 major commercial banks - Vietcombank (VCB), Vietinbank (CTG), BIDV
+          (BID), MBBank (MBB), and Sacombank (STB) - all of which are core
+          constituents of the VN30 index. Furthermore, the stock data of Gold
+          Futures are collected to define the influence of gold on the
+          Vietnamese Banking sector. Moreover, this study focuses on the data
+          from 05/01/2015 - 27/02/2026.
         </p>
         <p>
-          That makes the linear side more honest: instead of relying on hidden
-          placeholder validation tables, this section stays with the DeepExplainer
-          artifacts that are actually saved to disk, including local sample
-          decompositions and lag-level importance curves.
+          The original data of each stock includes 6 daily features: Date
+          (time), Opening price (open), Closing price (close), Highest price
+          (high), Lowest price (low), and Trading volume (volume). These
+          variables are used to construct the sector-level time series for
+          subsequent analysis. All price values of banking stocks are reported
+          in Vietnamese dong (VND), while those of gold are measured in USD.
+          The data were collected from vn.investing.com. This is the example
+          structure of the stock data:
         </p>
-      </ArticleSection>
 
-      <FigureFrame
-        caption="The selector compares four raw DeepExplainer windows across the three linear models. Normalized mean |SHAP| is the fairest default because it compares windows of very different lengths without rewarding them merely for having more lags."
-        label="Linear family"
-        lane="page"
-        title="The raw linear export spans four history windows, and the 7-day bundle is the most concentrated."
-      >
-        <CsvFigure
-          controls={["y"]}
-          defaultColor="model"
-          defaultView="line"
-          defaultX="lookback"
-          defaultY="mean_abs_shap"
-          showLegend
-          src="/data/linear-lookback-validation.csv"
-        />
-      </FigureFrame>
+        <FigureFrame
+          caption="The sample table keeps the original stock-data structure visible before the sector index and engineered features are constructed."
+          label="Data Collection"
+          lane="screen"
+          title="Each raw stock series begins with the standard OHLCV structure."
+        >
+          <InteractiveTable
+            columns={stockDatasetColumns}
+            label="Sample stock dataset structure"
+            rows={stockDatasetRows}
+          />
+        </FigureFrame>
 
-      <FigureFrame
-        caption="The local view uses the strongest model-window bundle: NLinear with a 7-day history. Each bar is one lag-specific return contribution, so the bullish and bearish samples can be read as explicit temporal stacks rather than as a blended feature list."
-        label="Linear family"
-        lane="page"
-        title="DeepExplainer makes the dominant lag contributions legible one sample at a time."
-      >
-        <RankedBarFigure
-          defaultGroup="Bullish sample"
-          groupKey="case"
-          label="Linear-family local SHAP"
-          labelKey="feature"
-          limit={10}
-          mode="diverging"
-          src="/data/linear-local-shap.csv"
-          valueKey="contribution"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="These lines come from the same 7-day bundle used for the local view. They average absolute lag contribution across samples so the three linear models can be compared on the same temporal axis."
-        label="Linear family"
-        lane="page"
-        title="Within the 7-day bundle, the models agree that only a handful of recent lags dominate."
-      >
-        <CsvFigure
-          controls={[]}
-          defaultColor="model"
-          defaultView="line"
-          defaultX="lag_day"
-          defaultY="importance"
-          showLegend
-          src="/data/linear-lag-importance.csv"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="Because the exported linear SHAP tables activate only one raw feature, the global ranking is expressed as model-window-lag combinations rather than as many distinct variables. That still reveals which bundles and lag positions repeatedly concentrate the family’s explanatory mass."
-        label="Linear family"
-        lane="page"
-        title="Across all linear bundles, a small set of lag positions carries most of the attribution weight."
-      >
-        <RankedBarFigure
-          label="Linear-family feature importance"
-          labelKey="feature"
-          limit={10}
-          mode="positive"
-          src="/data/linear-feature-importance.csv"
-          valueKey="importance"
-        />
-      </FigureFrame>
-
-      <ArticleSection
-        id="tree-explainer"
-        title="TreeExplainer for Tree Baselines"
-        lede="The tree-family baselines are not substitutes for the linear study; they are a second explanatory lens. They show how the same exported feature table behaves once the model class is allowed to be nonlinear from the start."
-      >
+        <h3>Building the Banking Sector Index</h3>
         <p>
-          TreeExplainer is applied to the three tree models already present in
-          the raw workspace exports. These baselines do not reproduce the
-          linear-family lag curves, but they do provide real local SHAP vectors,
-          stable global rankings, and a feature-family heatmap that is useful
-          for checking whether the nonlinear models focus on the same parts of
-          the input space.
+          An equal-weighted sector index is constructed by assigning the same
+          weight to each constituent stock within the sector, regardless of its
+          market capitalization or trading size. In other words, each stock in
+          a banking sector index of N stocks is assigned a weight of 1/N. Each
+          price feature (open, high, low, and close) at each time step is
+          computed as the arithmetic average of the corresponding prices of all
+          5 banking institutions. This ensures that each stock contributes
+          equally to the sector’s price movement rather than allowing large-cap
+          firms to dominate the index.
         </p>
         <p>
-          In the current export bundle, LightGBM is used as the primary local
-          example because its SHAP rows are fully available and its importance
-          profile sits close to the best tree-family summary metric. The other
-          two tree models remain visible in the global and family-level views.
+          For trading activity, the sector volume is typically calculated as
+          the sum of the trading volumes of all constituent stocks at each time
+          step. Unlike prices, which represent relative value and can be
+          averaged under equal weighting, volume reflects the total amount of
+          shares traded in the sector. Summing the volumes therefore provides a
+          measure of the overall liquidity and trading intensity of the banking
+          sector during that period.
         </p>
-      </ArticleSection>
 
-      <FigureFrame
-        caption="The local TreeExplainer view is built directly from the exported LightGBM SHAP rows. The bullish and bearish samples are fixed so the interaction stays deterministic."
-        label="Tree family"
-        lane="page"
-        title="TreeExplainer exposes how one positive and one negative tree-based forecast are assembled."
-      >
-        <RankedBarFigure
-          defaultGroup="Bullish sample"
-          groupKey="case"
-          label="Tree-family local SHAP"
-          labelKey="feature"
-          limit={10}
-          mode="diverging"
-          src="/data/tree-local-shap.csv"
-          valueKey="contribution"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="The grouped ranking comes from mean absolute SHAP values per model. Switching between LightGBM, XGBoost, and RandomForest shows whether the same features stay near the top under different nonlinear learners."
-        label="Tree family"
-        lane="page"
-        title="The tree baselines produce a full global importance ranking rather than a single anecdotal explanation."
-      >
-        <RankedBarFigure
-          defaultGroup="LightGBM"
-          groupKey="model"
-          label="Tree-family feature importance"
-          labelKey="feature"
-          limit={12}
-          mode="positive"
-          src="/data/tree-feature-importance.csv"
-          valueKey="importance"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="The heatmap aggregates SHAP values into fixed feature families. Reading it row-wise is more useful than reading it as a winner-takes-all chart because it shows where the three models agree and where they diverge."
-        label="Tree family"
-        lane="page"
-        title="TreeExplainer reveals that return-history families dominate, while volume, volatility, and gold remain secondary but persistent."
-      >
-        <HeatmapFigure
-          label="Tree-family feature family heatmap"
-          src="/data/tree-feature-family.csv"
-          valueKey="share"
-          xKey="model"
-          yKey="family"
-        />
-      </FigureFrame>
-
-      <ArticleSection
-        id="research-questions"
-        title="Research Question Analysis"
-        lede="The dual-family structure is most useful here. The report can now compare what DeepExplainer and TreeExplainer agree on, and what each family treats differently."
-      >
-        <h3>Using SHAP to identify important features</h3>
+        <h3>Implemented Features</h3>
         <p>
-          The linear family now speaks almost entirely through temporal
-          position. In the saved DeepExplainer export, only <code>return_1d</code>
-          carries nonzero attribution, so the main question becomes which lags
-          of that return signal dominate each model and history window. The
-          tree family strips away that sequence framing and asks a different
-          question: once the same engineered table is fed into nonlinear
-          baselines, which variables still rise to the top?
+          During the feature engineering stage, two different feature sets were
+          developed for deep linear models and traditional machine learning
+          models. Although both share the same set of technical indicator
+          features, the feature set for the machine learning models includes
+          lagged returns. This is because deep linear models inherently capture
+          temporal dependencies by using sequential time-series inputs,
+          effectively incorporating lagged information through the time-series
+          window.
+        </p>
+
+        <h3>Building the Time-Series Dataset</h3>
+        <p>
+          The data preprocessing pipeline was designed to support both
+          traditional machine learning models and deep linear models
+          (LTSF-Linear models) while maintaining a consistent data splitting
+          strategy.
         </p>
         <p>
-          Across the current exports, the answer is still not random. Return
-          information dominates both families, but the tree models keep a wider
-          surrounding cast of volatility, volume, and gold features visible,
-          while the linear export collapses to a much narrower single-feature
-          story. That contrast is why the report treats explainability as a
-          cross-family pattern rather than as one model&apos;s anecdote.
-        </p>
-      </ArticleSection>
-
-      <FigureFrame
-        caption="Ranks are shown instead of raw importance so the three tree models can be compared on the same visual footing. Lower ranks are stronger, which is why darker cells represent more prominent features here."
-        label="Tree family"
-        lane="page"
-        title="The tree models still agree on a compact set of high-priority return features."
-      >
-        <HeatmapFigure
-          label="Tree-family rank heatmap"
-          reverseScale
-          src="/data/tree-feature-rank-heatmap.csv"
-          valueKey="rank"
-          xKey="model"
-          yKey="feature"
-        />
-      </FigureFrame>
-
-      <section className="article-section l-body">
-        <h3>Can gold price be used as an indicator?</h3>
-        <p>
-          The current workspace gives one direct answer and one audit. In the
-          tree family, gold is evaluated through SHAP rank and sign balance. In
-          the raw linear DeepExplainer export, gold is not present in the saved
-          feature set at all, so the linear side can only answer by showing that
-          absence explicitly.
+          For machine learning models such as XGBoost, LightGBM, and Random
+          Forest, the dataset is organized in a tabular format where each row
+          represents a single observation with engineered technical indicators
+          as input features and future returns as prediction targets.
         </p>
         <p>
-          Taken together, that yields a narrower but cleaner interpretation. The
-          current linear bundle cannot support a gold claim because the variable
-          never enters the saved DeepExplainer tensors, while the tree family
-          shows that gold is secondary but nonzero once it is actually present.
-        </p>
-      </section>
-
-      <FigureFrame
-        caption="Status 2 means present and active in SHAP, 1 means present but zero throughout the saved export, and 0 means absent. Gold is absent across all three linear models, while only return_1d receives nonzero attribution."
-        label="Linear family"
-        lane="page"
-        title="Within the saved linear export, gold is absent rather than merely weak."
-      >
-        <HeatmapFigure
-          label="Linear-family feature audit"
-          src="/data/linear-gold-ablation.csv"
-          valueKey="status"
-          xKey="model"
-          yKey="feature"
-        />
-      </FigureFrame>
-
-      <FigureFrame
-        caption="The tree-family view summarizes how much absolute SHAP weight gold receives, what rank it holds inside each model, and how often its contribution is positive versus negative."
-        label="Tree family"
-        lane="body"
-        title="Across the tree baselines, gold stays visible but clearly secondary to the main return features."
-      >
-        <CsvFigure
-          controls={["y"]}
-          defaultView="bar"
-          defaultX="model"
-          defaultY="mean_abs_shap"
-          showLegend={false}
-          src="/data/tree-gold-summary.csv"
-        />
-      </FigureFrame>
-
-      <ArticleSection
-        id="conclusion"
-        title="Conclusion"
-        lede="The value of the current workspace is not that it forces one winner. It is that it lets the report keep its main linear-family study while also exposing a second, tree-based explanatory baseline."
-      >
-        <p>
-          The combined article now uses everything that is currently available.
-          Shared figures come directly from the exported stock table, the linear
-          story is rebuilt directly from raw DeepExplainer windows, and the tree
-          family adds a real TreeExplainer baseline without pretending to live
-          on the same error scale.
+          For LTSF-Linear models, the data is converted into a sequential
+          time-series format using a sliding window approach. Each sample
+          consists of a sequence of historical observations used to predict the
+          next seven days of returns. Multiple input sequence lengths (7, 30,
+          120, and 480 days) are used to capture both short-term and long-term
+          market dynamics.
         </p>
         <p>
-          That structure makes the report more defensible. The linear family
-          still carries the main forecasting narrative, the tree family tests
-          whether the engineered features survive a nonlinear benchmark, and the
-          research-question section compares patterns rather than flattening
-          unlike quantities into one chart. The next step is not to change the
-          structure again, but simply to replace each family&apos;s CSV bundle with
-          cleaner final exports as they become available.
+          For both model types, the dataset is split chronologically into
+          training (70%), validation (15%), and test (15%) sets to preserve
+          the temporal order of financial data. Feature and target
+          normalization is applied using scalers fitted only on the training
+          set, and the same transformation is applied to the validation and
+          test sets to prevent information leakage.
         </p>
+
+        <FigureFrame
+          caption="The split timeline makes the preprocessing rule explicit: training, validation, and test sets follow chronological order rather than random sampling."
+          label="Data Collection"
+          lane="page"
+          title="The dataset is divided into chronological training, validation, and test windows."
+        >
+          <TimelineFigure
+            endKey="end_date"
+            label="Chronological split"
+            labelKey="split"
+            src="/data/dataset-split.csv"
+            startKey="start_date"
+            valueKey="observations"
+          />
+        </FigureFrame>
       </ArticleSection>
 
       <section className="backmatter l-page" id="sources">
-        <div className="backmatter__row">
-          <h2 className="backmatter__label">Footnotes</h2>
-          <div className="backmatter__content">
-            <FootnoteList items={footnoteItems} />
-          </div>
-        </div>
-
         <div className="backmatter__row">
           <h2 className="backmatter__label">References</h2>
           <div className="backmatter__content">

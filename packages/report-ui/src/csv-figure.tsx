@@ -52,6 +52,7 @@ export function CsvFigure({
   const [yKey, setYKey] = useState(defaultY ?? "");
   const [colorKey, setColorKey] = useState(defaultColor ?? "");
   const [activeSeries, setActiveSeries] = useState(ALL_SERIES);
+  const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
   const [inspectedRow, setInspectedRow] = useState<CsvRow | null>(null);
 
   useEffect(() => {
@@ -136,6 +137,7 @@ export function CsvFigure({
 
   useEffect(() => {
     setActiveSeries(ALL_SERIES);
+    setHoveredSeries(null);
     setInspectedRow(null);
   }, [colorKey, view, xKey, yKey]);
 
@@ -168,7 +170,8 @@ export function CsvFigure({
   const plotHeight = height - margin.top - margin.bottom;
   const xIsNumeric = numericColumns.includes(currentX);
   const seriesNames = currentColor ? uniqueValues(rows, currentColor) : [];
-  const focusedSeries = currentColor && activeSeries !== ALL_SERIES ? activeSeries : null;
+  const focusedSeries =
+    hoveredSeries ?? (currentColor && activeSeries !== ALL_SERIES ? activeSeries : null);
   const visibleSeries = seriesNames;
   const xCategories = uniqueValues(rows, currentX);
   const filteredRows =
@@ -275,6 +278,16 @@ export function CsvFigure({
       };
     })
     .filter((point): point is NonNullable<typeof point> => point !== null);
+
+  function handlePointEnter(row: CsvRow, seriesName?: string) {
+    setInspectedRow(row);
+    setHoveredSeries(seriesName ?? null);
+  }
+
+  function clearPointHover() {
+    setInspectedRow(null);
+    setHoveredSeries(null);
+  }
 
   const barData = aggregateRows(filteredRows, currentX, currentY, xIsNumeric);
 
@@ -445,25 +458,86 @@ export function CsvFigure({
                         const isActive = inspectedRow === point.row;
 
                         return (
-                          <circle
-                            aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
-                            className={`csv-point${isActive ? " is-active" : ""}${
-                              series.isFocused ? " is-focused" : " is-muted"
-                            }`}
-                            cx={x}
-                            cy={y}
-                            key={`${series.name}-${point.xLabel}-${point.yValue}`}
-                            onFocus={() => setInspectedRow(point.row)}
-                            onMouseEnter={() => setInspectedRow(point.row)}
-                            r={isActive ? activePointRadius : pointRadius}
-                            style={{
-                              fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
-                            }}
-                            tabIndex={0}
-                          />
+                          <g key={`${series.name}-${point.xLabel}-${point.yValue}`}>
+                            <circle
+                              aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
+                              className={`csv-point${isActive ? " is-active" : ""}${
+                                series.isFocused ? " is-focused" : " is-muted"
+                              }`}
+                              cx={x}
+                              cy={y}
+                              onBlur={clearPointHover}
+                              onFocus={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseEnter={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseLeave={clearPointHover}
+                              r={isActive ? activePointRadius : pointRadius}
+                              style={{
+                                fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
+                              }}
+                              tabIndex={0}
+                            />
+                            {isActive ? (
+                              <text className="csv-point-label" x={x + 8} y={y - 10}>
+                                {numberFormatter.format(point.yValue)}
+                              </text>
+                            ) : null}
+                          </g>
                         );
                       })
-                    : null}
+                    : series.points.map((point) => {
+                        const x = getXPosition({
+                          categories: xCategories,
+                          marginLeft: margin.left,
+                          plotWidth,
+                          safeXMax,
+                          safeXMin,
+                          value: point.xValue,
+                          valueLabel: point.xLabel,
+                          xIsNumeric,
+                        });
+                        const y =
+                          margin.top +
+                          plotHeight -
+                          scaleLinear(point.yValue, safeYMin, safeYMax, plotHeight);
+                        const isActive = inspectedRow === point.row;
+
+                        return (
+                          <g key={`${series.name}-${point.xLabel}-${point.yValue}`}>
+                            <circle
+                              aria-hidden="true"
+                              className="csv-point-target"
+                              cx={x}
+                              cy={y}
+                              onMouseEnter={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                              onMouseLeave={clearPointHover}
+                              r={Math.max(activePointRadius + 3, 7)}
+                              tabIndex={-1}
+                            />
+                            {isActive ? (
+                              <>
+                                <circle
+                                  aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
+                                  className={`csv-point is-active${
+                                    series.isFocused ? " is-focused" : " is-muted"
+                                  }`}
+                                  cx={x}
+                                  cy={y}
+                                  onBlur={clearPointHover}
+                                  onFocus={() => handlePointEnter(point.row, currentColor ? series.name : undefined)}
+                                  r={activePointRadius}
+                                  style={{
+                                    fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
+                                  }}
+                                  tabIndex={0}
+                                />
+                                <text className="csv-point-label" x={x + 8} y={y - 10}>
+                                  {numberFormatter.format(point.yValue)}
+                                </text>
+                              </>
+                            ) : null}
+                          </g>
+                        );
+                      })}
                 </g>
               ))
             : null}
@@ -480,22 +554,30 @@ export function CsvFigure({
                 const isActive = inspectedRow === point.row;
 
                 return (
-                  <circle
-                    aria-label={`${point.row[currentX]}, ${currentY}: ${point.yValue}`}
-                    className={`csv-point${isActive ? " is-active" : ""}${
-                      point.isFocused ? " is-focused" : " is-muted"
-                    }`}
-                    cx={x}
-                    cy={y}
-                    key={index}
-                    onFocus={() => setInspectedRow(point.row)}
-                    onMouseEnter={() => setInspectedRow(point.row)}
-                    r={isActive ? activePointRadius : pointRadius}
-                    style={{
-                      fill: point.isFocused ? point.color : "rgba(154, 154, 154, 0.82)",
-                    }}
-                    tabIndex={0}
-                  />
+                  <g key={index}>
+                    <circle
+                      aria-label={`${point.row[currentX]}, ${currentY}: ${point.yValue}`}
+                      className={`csv-point${isActive ? " is-active" : ""}${
+                        point.isFocused ? " is-focused" : " is-muted"
+                      }`}
+                      cx={x}
+                      cy={y}
+                      onBlur={clearPointHover}
+                      onFocus={() => handlePointEnter(point.row, currentColor ? point.row[currentColor] : undefined)}
+                      onMouseEnter={() => handlePointEnter(point.row, currentColor ? point.row[currentColor] : undefined)}
+                      onMouseLeave={clearPointHover}
+                      r={isActive ? activePointRadius : pointRadius}
+                      style={{
+                        fill: point.isFocused ? point.color : "rgba(154, 154, 154, 0.82)",
+                      }}
+                      tabIndex={0}
+                    />
+                    {isActive ? (
+                      <text className="csv-point-label" x={x + 8} y={y - 10}>
+                        {numberFormatter.format(point.yValue)}
+                      </text>
+                    ) : null}
+                  </g>
                 );
               })
             : null}
@@ -519,8 +601,10 @@ export function CsvFigure({
                       aria-label={`${bar.label}, ${currentY}: ${bar.value}`}
                       className={`csv-bar${isActive ? " is-active" : ""}`}
                       height={heightValue}
-                      onFocus={() => setInspectedRow(bar.row)}
-                      onMouseEnter={() => setInspectedRow(bar.row)}
+                      onBlur={clearPointHover}
+                      onFocus={() => handlePointEnter(bar.row)}
+                      onMouseEnter={() => handlePointEnter(bar.row)}
+                      onMouseLeave={clearPointHover}
                       rx={4}
                       ry={4}
                       style={{ fill: palette[0] }}
@@ -567,6 +651,8 @@ export function CsvFigure({
             <button
               className={`csv-legend-button${activeSeries === seriesName ? " is-active" : ""}`}
               key={seriesName}
+              onMouseEnter={() => setHoveredSeries(seriesName)}
+              onMouseLeave={() => setHoveredSeries(null)}
               onClick={() => setActiveSeries(seriesName)}
               type="button"
             >

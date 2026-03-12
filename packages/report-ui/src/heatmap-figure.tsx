@@ -18,6 +18,9 @@ type HeatmapFigureProps = {
   valueKey: string;
   label?: string;
   reverseScale?: boolean;
+  valueFormat?: "number" | "percent";
+  xLabelMap?: Record<string, string>;
+  yLabelMap?: Record<string, string>;
 };
 
 type HeatmapTooltip = {
@@ -31,8 +34,11 @@ export function HeatmapFigure({
   reverseScale = false,
   src,
   valueKey,
+  valueFormat = "number",
   xKey,
+  xLabelMap,
   yKey,
+  yLabelMap,
 }: HeatmapFigureProps) {
   const { error, rows, status } = useCsvData(src);
   const [inspectedRow, setInspectedRow] = useState<CsvRow | null>(null);
@@ -60,11 +66,20 @@ export function HeatmapFigure({
     Math.min(...numericValues),
     Math.max(...numericValues),
   );
+  const displayXValues = xValues.map((value) => xLabelMap?.[value] ?? value);
+  const displayYValues = yValues.map((value) => yLabelMap?.[value] ?? value);
+  const maxRowLabelLength = Math.max(...displayYValues.map((value) => value.length));
+  const maxColumnLabelLength = Math.max(...displayXValues.map((value) => value.length));
   const cellSize = Math.max(
     32,
     Math.min(42, 420 / Math.max(yValues.length, 1), 420 / Math.max(xValues.length, 1)),
   );
-  const margin = { top: 26, right: 20, bottom: 34, left: 170 };
+  const margin = {
+    top: 22,
+    right: 20,
+    bottom: Math.max(38, Math.min(56, 22 + maxColumnLabelLength * 1.4)),
+    left: Math.max(82, Math.min(150, 22 + maxRowLabelLength * 7)),
+  };
   const gap = 6;
   const cellStep = cellSize + gap;
   const width =
@@ -86,6 +101,14 @@ export function HeatmapFigure({
     setInspectedRow(row);
   }
 
+  function formatHeatmapValue(value: number) {
+    if (valueFormat === "percent") {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+
+    return formatShortNumber(value, 3);
+  }
+
   function handlePointerMove(
     event: ReactMouseEvent<SVGRectElement>,
     row: CsvRow,
@@ -103,13 +126,17 @@ export function HeatmapFigure({
       {tooltip ? (
         <div className="heatmap-figure__tooltip" style={tooltipStyle}>
           <div>
-            <strong>{xKey}:</strong> {tooltip.row[xKey]}
+            <strong>{xKey}:</strong> {xLabelMap?.[tooltip.row[xKey]] ?? tooltip.row[xKey]}
           </div>
           <div>
-            <strong>{yKey}:</strong> {tooltip.row[yKey]}
+            <strong>{yKey}:</strong> {yLabelMap?.[tooltip.row[yKey]] ?? tooltip.row[yKey]}
           </div>
           <div>
-            <strong>{valueKey}:</strong> {tooltip.row[valueKey]}
+            <strong>{valueKey}:</strong>{" "}
+            {(() => {
+              const numericValue = toNumber(tooltip.row[valueKey]);
+              return numericValue === null ? tooltip.row[valueKey] : formatHeatmapValue(numericValue);
+            })()}
           </div>
         </div>
       ) : null}
@@ -124,6 +151,7 @@ export function HeatmapFigure({
           >
           {yValues.map((rowLabel, rowIndex) => {
             const y = margin.top + rowIndex * cellStep;
+            const displayLabel = yLabelMap?.[rowLabel] ?? rowLabel;
 
             return (
               <text
@@ -132,17 +160,18 @@ export function HeatmapFigure({
                 x={margin.left - 12}
                 y={y + cellSize / 2 + 4}
               >
-                {rowLabel}
+                {displayLabel}
               </text>
             );
           })}
 
           {xValues.map((columnLabel, columnIndex) => {
             const x = margin.left + columnIndex * cellStep + cellSize / 2;
+            const displayLabel = xLabelMap?.[columnLabel] ?? columnLabel;
 
             return (
               <text className="heatmap-chart__label" key={columnLabel} x={x} y={height - 10}>
-                {columnLabel}
+                {displayLabel}
               </text>
             );
           })}
@@ -189,7 +218,7 @@ export function HeatmapFigure({
                   x={x + cellSize / 2}
                   y={y + cellSize / 2 + 4}
                 >
-                  {formatShortNumber(numericValue, 3)}
+                  {formatHeatmapValue(numericValue)}
                 </text>
               </g>
             );
@@ -201,13 +230,17 @@ export function HeatmapFigure({
           {inspectedRow ? (
             <>
               <span>
-                <strong>{xKey}:</strong> {inspectedRow[xKey]}
+                <strong>{xKey}:</strong> {xLabelMap?.[inspectedRow[xKey]] ?? inspectedRow[xKey]}
               </span>
               <span>
-                <strong>{yKey}:</strong> {inspectedRow[yKey]}
+                <strong>{yKey}:</strong> {yLabelMap?.[inspectedRow[yKey]] ?? inspectedRow[yKey]}
               </span>
               <span>
-                <strong>{valueKey}:</strong> {inspectedRow[valueKey]}
+                <strong>{valueKey}:</strong>{" "}
+                {(() => {
+                  const numericValue = toNumber(inspectedRow[valueKey]);
+                  return numericValue === null ? inspectedRow[valueKey] : formatHeatmapValue(numericValue);
+                })()}
               </span>
             </>
           ) : (
