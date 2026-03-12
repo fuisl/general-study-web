@@ -308,10 +308,12 @@ export function CsvFigure({
             <Control
               label="Y axis"
               onChange={setYKey}
-              options={numericColumns.map((column) => ({
+              options={numericColumns
+                .filter((column) => column !== currentX)
+                .map((column) => ({
                 label: column,
                 value: column,
-              }))}
+                }))}
               value={currentY}
             />
           ) : null}

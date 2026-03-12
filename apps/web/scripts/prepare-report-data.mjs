@@ -66,7 +66,7 @@ function main() {
   writeCsv(
     join(dataDir, "forecast-horizon-profile.csv"),
     buildForecastHorizonProfile(stockRows),
-    ["horizon_day", "mean_return", "std_return", "positive_share"],
+    ["horizon_day", "mean_return", "std_return", "positive_share", "range_return"],
   );
 
   const notebook = JSON.parse(readFileSync(notebookPath, "utf8"));
@@ -198,11 +198,13 @@ function buildForecastHorizonProfile(rows) {
     const mean = average(values);
     const variance = average(values.map((value) => (value - mean) ** 2));
     const positiveShare = values.filter((value) => value > 0).length / values.length;
+    const rangeReturn = Math.max(...values) - Math.min(...values);
 
     return {
       horizon_day: String(horizonDay),
       mean_return: formatNumber(mean),
       positive_share: formatNumber(positiveShare),
+      range_return: formatNumber(rangeReturn),
       std_return: formatNumber(Math.sqrt(variance)),
     };
   });

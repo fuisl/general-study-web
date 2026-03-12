@@ -9,6 +9,7 @@ import {
   RankedBarFigure,
   ReferenceList,
   ReportShell,
+  SmallMultiplesFigure,
   TimelineFigure,
 } from "@repo/report-ui";
 import { citationItems, footnoteItems, reportMeta } from "../data/report";
@@ -140,18 +141,28 @@ export function ReportArticle() {
       </FigureFrame>
 
       <FigureFrame
-        caption="The target remains multi-step even before any model is selected. Standard deviation grows steadily from day 1 to day 7, while the positive-share curve remains comparatively stable."
+        caption="The target remains multi-step even before any model is selected. Dispersion, range, and average return all widen as the horizon extends, while the positive-share curve moves more gradually."
         label="Shared data"
-        lane="body"
+        lane="page"
         title="The forecasting target becomes more dispersed as the prediction horizon moves further out."
       >
-        <CsvFigure
-          controls={["y"]}
-          defaultView="line"
-          defaultX="horizon_day"
-          defaultY="std_return"
-          showLegend={false}
+        <SmallMultiplesFigure
+          chartConfig={{
+            height: 220,
+            lineWidth: 2,
+            maxXTicks: 4,
+            maxYTicks: 4,
+            pointRadius: 3,
+            showPoints: true,
+          }}
+          metrics={[
+            { key: "mean_return", label: "Mean return" },
+            { key: "std_return", label: "Std. deviation" },
+            { key: "positive_share", label: "Positive share" },
+            { key: "range_return", label: "Return range" },
+          ]}
           src="/data/forecast-horizon-profile.csv"
+          xKey="horizon_day"
         />
       </FigureFrame>
 

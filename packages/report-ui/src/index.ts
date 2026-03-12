@@ -3,4 +3,5 @@ export * from "./csv-figure";
 export * from "./citations";
 export * from "./heatmap-figure";
 export * from "./ranked-bar-figure";
+export * from "./small-multiples-figure";
 export * from "./timeline-figure";
