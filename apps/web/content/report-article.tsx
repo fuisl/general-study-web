@@ -608,17 +608,12 @@ export function ReportArticle() {
 
       <ArticleSection id="results" title="Results">
         <p>
-          The results presented in this web version are organized around the
-          exported SHAP figures currently available in the workspace. Rather
-          than repeating the methodological discussion, this section focuses on
-          how the diagrams summarize feature-level contributions at both the
-          local and global levels.
-        </p>
-        <p>
-          The first figure below decomposes a single forecast into feature
-          pushes and pulls. The following heatmaps then aggregate the same
-          explanatory logic across the model family so that broader patterns in
-          feature influence can be read more systematically.
+          The result figures show a consistent pattern. SHAP explanations are
+          dominated by return-based variables, while volatility, volume, and
+          the gold signal play secondary roles. Taken together, the diagrams
+          suggest that the models behave mainly as trend- and
+          momentum-sensitive forecasters rather than relying equally on all
+          available indicators.
         </p>
 
         <FigureFrame
@@ -638,6 +633,15 @@ export function ReportArticle() {
             valueKey="contribution"
           />
         </FigureFrame>
+        <p>
+          The local SHAP plot makes this pattern visible at the single-sample
+          level. In the positive-contribution case, the forecast is pushed
+          upward mainly by short-horizon returns such as 1-day, 3-day, 5-day,
+          and 7-day returns. In the negative-contribution case, the strongest
+          downward force comes from the 30-day return, followed by ATR and
+          other lagged-return terms. This indicates that recent price history
+          remains the main source of both bullish and bearish signals.
+        </p>
 
         <FigureFrame
           caption="This feature-family heatmap provides a global view by aggregating SHAP mass into broader feature families so the explanatory pattern can be compared across models."
@@ -663,6 +667,15 @@ export function ReportArticle() {
             yKey="model"
           />
         </FigureFrame>
+        <p>
+          The feature-family heatmap provides the corresponding global view.
+          Across RandomForest, XGBoost, and LightGBM, short returns account for
+          the largest share of SHAP mass, and long returns consistently appear
+          second. Trend moving averages remain relevant, but clearly below the
+          return families. Volatility, volume-flow indicators, and the
+          external gold variable contribute less, although none of them
+          disappears completely.
+        </p>
 
         <FigureFrame
           caption="Ranks are shown instead of raw importance so the three tree models can be compared on the same visual footing. Lower ranks indicate stronger influence."
@@ -691,6 +704,16 @@ export function ReportArticle() {
             yKey="model"
           />
         </FigureFrame>
+        <p>
+          The rank heatmap shows that the agreement is not only broad but also
+          feature-specific. Return-based variables such as 30-day, 1-day,
+          120-day, and 480-day returns appear repeatedly near the top of the
+          ranking table. Gold return stays in the middle of the ranking rather
+          than becoming dominant, while ATR is important but not the primary
+          driver. Overall, the result section supports the conclusion that the
+          strongest explanatory signals come from lagged market behavior, with
+          gold acting as a complementary rather than leading factor.
+        </p>
       </ArticleSection>
 
       <ArticleSection
