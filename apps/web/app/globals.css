@@ -525,18 +525,41 @@ code {
 .csv-line {
   fill: none;
   stroke-width: 2;
+  transition:
+    opacity 160ms ease,
+    stroke 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.csv-line.is-focused {
+  opacity: 1;
+}
+
+.csv-line.is-muted {
+  opacity: 0.28;
 }
 
 .csv-point,
 .csv-bar {
   cursor: pointer;
-  transition: opacity 140ms ease;
+  transition:
+    opacity 140ms ease,
+    fill 140ms ease,
+    r 140ms ease;
 }
 
 .csv-point {
   opacity: 0.9;
   stroke: #ffffff;
   stroke-width: 1.5;
+}
+
+.csv-point.is-focused {
+  opacity: 0.95;
+}
+
+.csv-point.is-muted {
+  opacity: 0.25;
 }
 
 .csv-point.is-active,
@@ -609,6 +632,10 @@ code {
 .timeline-figure {
   display: grid;
   gap: 0.85rem;
+}
+
+.heatmap-figure {
+  position: relative;
 }
 
 .ranked-bar-chart,
@@ -684,9 +711,42 @@ code {
 
 .heatmap-chart__value {
   fill: #2d2d2d;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   text-anchor: middle;
+}
+
+.heatmap-figure__frame {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.heatmap-chart {
+  width: auto;
+  max-width: none;
+  margin-inline: auto;
+}
+
+.heatmap-figure__tooltip {
+  position: fixed;
+  z-index: 20;
+  min-width: 10rem;
+  max-width: 14rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  color: #3a3a3a;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.heatmap-figure__tooltip strong {
+  color: var(--ink);
 }
 
 .timeline-chart__bar {

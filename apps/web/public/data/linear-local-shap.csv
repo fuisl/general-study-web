@@ -1,15 +1,15 @@
 feature,case,contribution
-Lag close t-1,Bullish sample,0.62
-MA20 gap,Bullish sample,0.38
-5-day return,Bullish sample,0.24
-Volume ratio,Bullish sample,0.12
-Gold return,Bullish sample,0.09
-Rolling volatility,Bullish sample,-0.16
-RSI14,Bullish sample,-0.05
-Lag close t-1,Bearish sample,-0.58
-MA20 gap,Bearish sample,-0.31
-5-day return,Bearish sample,-0.21
-Volume ratio,Bearish sample,-0.09
-Gold return,Bearish sample,-0.06
-Rolling volatility,Bearish sample,0.19
-RSI14,Bearish sample,0.08
+return_1d · lag 4,Bullish sample,0.414615
+return_1d · lag 3,Bullish sample,0.222465
+return_1d · lag 5,Bullish sample,0.192618
+return_1d · lag 7,Bullish sample,0.170836
+return_1d · lag 6,Bullish sample,0.094123
+return_1d · lag 2,Bullish sample,0.082355
+return_1d · lag 1,Bullish sample,0.064373
+return_1d · lag 4,Bearish sample,-0.778674
+return_1d · lag 6,Bearish sample,-0.685857
+return_1d · lag 7,Bearish sample,-0.399849
+return_1d · lag 2,Bearish sample,0.113403
+return_1d · lag 1,Bearish sample,-0.048866
+return_1d · lag 3,Bearish sample,-0.023297
+return_1d · lag 5,Bearish sample,0.003083

@@ -1,7 +1,19 @@
-model,scenario,rmse,mae,mape
-Linear,Without gold,3.95,3.04,5.01
-Linear,With gold,3.82,2.93,4.82
-DLinear,Without gold,3.34,2.54,4.21
-DLinear,With gold,3.21,2.45,4.07
-NLinear,Without gold,2.86,2.16,3.64
-NLinear,With gold,2.74,2.07,3.48
+model,feature,status
+Linear,return_1d,2
+Linear,price level,1
+Linear,moving averages,1
+Linear,volume flow,1
+Linear,volatility,1
+Linear,gold_return,0
+DLinear,return_1d,2
+DLinear,price level,1
+DLinear,moving averages,1
+DLinear,volume flow,1
+DLinear,volatility,1
+DLinear,gold_return,0
+NLinear,return_1d,2
+NLinear,price level,1
+NLinear,moving averages,1
+NLinear,volume flow,1
+NLinear,volatility,1
+NLinear,gold_return,0

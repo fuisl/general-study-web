@@ -1,4 +1,4 @@
-model,rmse,mae,mape
-Linear,3.82,2.93,4.82
-DLinear,3.21,2.45,4.07
-NLinear,2.74,2.07,3.48
+model,mean_abs_shap,peak_abs_shap,mean_sample_abs,peak_sample_abs
+Linear,0.001042,0.595225,0.080267,0.618714
+DLinear,0.001033,0.595543,0.079512,0.617838
+NLinear,0.006771,1.678866,0.521398,2.71802

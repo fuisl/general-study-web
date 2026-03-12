@@ -1,5 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
+import {
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -10,17 +17,25 @@ const notebookPath = join(appDir, "content", "general_study_banking_gold_ML.ipyn
 
 mkdirSync(dataDir, { recursive: true });
 
-const LINEAR_FILE_MAP = new Map([
-  ["lookback-validation.csv", "linear-lookback-validation.csv"],
-  ["model-metrics.csv", "linear-model-metrics.csv"],
-  ["prediction-trace.csv", "linear-prediction-trace.csv"],
-  ["gold-ablation.csv", "linear-gold-ablation.csv"],
-  ["local-shap.csv", "linear-local-shap.csv"],
-  ["lag-importance.csv", "linear-lag-importance.csv"],
-  ["feature-importance.csv", "linear-feature-importance.csv"],
-]);
+const LINEAR_MODELS = ["Linear", "DLinear", "NLinear"];
+const LINEAR_LOOKBACKS = [
+  { days: 7, label: "7d" },
+  { days: 30, label: "30d" },
+  { days: 120, label: "120d" },
+  { days: 480, label: "480d" },
+];
+const LINEAR_FEATURE_GROUPS = [
+  { label: "return_1d", features: ["return_1d"] },
+  { label: "price level", features: ["close_log", "HCL3", "BBL_20"] },
+  { label: "moving averages", features: ["KAMA_10", "SMA_20", "EMA_20", "HMA_20"] },
+  { label: "volume flow", features: ["OBV", "PVT"] },
+  { label: "volatility", features: ["ATR_14"] },
+  { label: "gold_return", features: ["gold_return"] },
+];
 
 const TREE_MODELS = ["RandomForest", "XGBoost", "LightGBM"];
+const CONSTITUENT_BANKS = ["BID", "CTG", "MBB", "STB", "VCB"];
+const MARKET_CONTEXT_SERIES_ORDER = ["Banking basket", ...CONSTITUENT_BANKS, "Gold"];
 const TREE_FAMILIES = new Map([
   [
     "short_return",
@@ -43,11 +58,61 @@ const TREE_FAMILIES = new Map([
   ["external", ["gold_return"]],
 ]);
 
-main();
+await main();
 
-function main() {
+async function main() {
   const stockRows = parseCsvFile(join(rawDir, "stock_data.csv"));
-  copyLinearFiles();
+  const linearData = await buildLinearData();
+
+  writeCsv(
+    join(dataDir, "linear-lookback-validation.csv"),
+    buildLinearLookbackSummary(linearData.summaries),
+    [
+      "lookback",
+      "model",
+      "mean_abs_shap",
+      "peak_abs_shap",
+      "mean_sample_abs",
+      "peak_sample_abs",
+    ],
+  );
+  writeCsv(
+    join(dataDir, "linear-model-metrics.csv"),
+    buildLinearModelMetrics(linearData.summaries, linearData.focusLookback),
+    [
+      "model",
+      "mean_abs_shap",
+      "peak_abs_shap",
+      "mean_sample_abs",
+      "peak_sample_abs",
+    ],
+  );
+  writeCsv(
+    join(dataDir, "linear-prediction-trace.csv"),
+    buildLinearAttributionTrace(linearData.focusBundles),
+    ["sample", "series", "signal"],
+  );
+  writeCsv(
+    join(dataDir, "linear-local-shap.csv"),
+    buildLinearLocalShap(linearData.focusModelBundle),
+    ["feature", "case", "contribution"],
+  );
+  writeCsv(
+    join(dataDir, "linear-lag-importance.csv"),
+    buildLinearLagImportance(linearData.focusBundles),
+    ["lag_day", "model", "importance"],
+  );
+  writeCsv(
+    join(dataDir, "linear-feature-importance.csv"),
+    buildLinearFeatureImportance(linearData.summaries),
+    ["feature", "importance"],
+  );
+  writeCsv(
+    join(dataDir, "linear-gold-ablation.csv"),
+    buildLinearGoldAudit(linearData.summaries),
+    ["model", "feature", "status"],
+  );
+
   writeCsv(
     join(dataDir, "market-context.csv"),
     buildMarketContext(stockRows),
@@ -108,48 +173,57 @@ function main() {
   );
 }
 
-function copyLinearFiles() {
-  for (const [sourceName, targetName] of LINEAR_FILE_MAP.entries()) {
-    copyFileSync(join(dataDir, sourceName), join(dataDir, targetName));
-  }
-}
-
 function buildMarketContext(rows) {
-  const grouped = new Map();
-  const firstClose = Number(rows[0].close);
-  let goldIndex = 100;
+  const basketSeries = buildMonthEndSeries(
+    rows.map((row) => ({
+      date: row.time,
+      value: Number(row.close),
+    })),
+  );
+  const sharedMonths = new Set(basketSeries.map((entry) => entry.date));
+  const output = formatIndexedSeries("Banking basket", basketSeries);
 
-  rows.forEach((row, index) => {
-    if (index > 0) {
-      goldIndex *= Math.exp(Number(row.gold_return));
+  CONSTITUENT_BANKS.forEach((ticker) => {
+    const filePath = join(rawDir, "banking", `${ticker}.csv`);
+    if (!existsSync(filePath)) {
+      return;
     }
 
-    const key = row.time.slice(0, 7);
-    grouped.set(key, {
-      bankingIndex: (Number(row.close) / firstClose) * 100,
-      date: key,
-      goldIndex,
-    });
+    const seriesRows = parseImportedQuoteFile(filePath).filter((entry) =>
+      sharedMonths.has(entry.date.slice(0, 7)),
+    );
+    output.push(...formatIndexedSeries(ticker, buildMonthEndSeries(seriesRows)));
   });
 
-  const monthlyEntries = Array.from(grouped.values());
-  const baseBanking = monthlyEntries[0]?.bankingIndex ?? 100;
-  const baseGold = monthlyEntries[0]?.goldIndex ?? 100;
-  const output = [];
-  for (const entry of monthlyEntries) {
-    output.push({
-      date: entry.date,
-      index_value: formatNumber((entry.bankingIndex / baseBanking) * 100),
-      series: "Banking basket",
-    });
-    output.push({
-      date: entry.date,
-      index_value: formatNumber((entry.goldIndex / baseGold) * 100),
-      series: "Gold proxy",
-    });
+  const goldPath = join(rawDir, "Gold.csv");
+  if (existsSync(goldPath)) {
+    const goldRows = parseImportedQuoteFile(goldPath).filter((entry) =>
+      sharedMonths.has(entry.date.slice(0, 7)),
+    );
+    output.push(...formatIndexedSeries("Gold", buildMonthEndSeries(goldRows)));
+  } else {
+    let goldIndex = 100;
+    const goldProxySeries = buildMonthEndSeries(
+      rows.map((row, index) => {
+        if (index > 0) {
+          goldIndex *= Math.exp(Number(row.gold_return));
+        }
+
+        return {
+          date: row.time,
+          value: goldIndex,
+        };
+      }),
+    );
+    output.push(...formatIndexedSeries("Gold", goldProxySeries));
   }
 
-  return output;
+  return output.sort(
+    (left, right) =>
+      left.date.localeCompare(right.date) ||
+      MARKET_CONTEXT_SERIES_ORDER.indexOf(left.series) -
+        MARKET_CONTEXT_SERIES_ORDER.indexOf(right.series),
+  );
 }
 
 function buildTechnicalIndicators(rows) {
@@ -207,6 +281,333 @@ function buildForecastHorizonProfile(rows) {
       range_return: formatNumber(rangeReturn),
       std_return: formatNumber(Math.sqrt(variance)),
     };
+  });
+}
+
+async function buildLinearData() {
+  const summaries = [];
+
+  for (const lookback of LINEAR_LOOKBACKS) {
+    for (const model of LINEAR_MODELS) {
+      summaries.push(await summarizeLinearBundle(lookback, model));
+    }
+  }
+
+  const focusLookback = LINEAR_LOOKBACKS.map((lookback) => {
+    const lookbackSummaries = summaries.filter(
+      (summary) => summary.lookbackLabel === lookback.label,
+    );
+    return {
+      label: lookback.label,
+      score: average(lookbackSummaries.map((summary) => summary.meanAbsShap)),
+    };
+  }).sort((left, right) => right.score - left.score)[0].label;
+
+  const focusModel = summaries
+    .filter((summary) => summary.lookbackLabel === focusLookback)
+    .sort((left, right) => right.meanAbsShap - left.meanAbsShap)[0].model;
+
+  const focusBundles = [];
+  for (const model of LINEAR_MODELS) {
+    focusBundles.push(await buildLinearFocusBundle(focusLookback, model));
+  }
+
+  return {
+    focusBundles,
+    focusLookback,
+    focusModel,
+    focusModelBundle: focusBundles.find((bundle) => bundle.model === focusModel),
+    summaries,
+  };
+}
+
+async function summarizeLinearBundle(lookback, model) {
+  const filePath = join(
+    rawDir,
+    "shap_results",
+    lookback.label,
+    `${model}_shap_values.csv`,
+  );
+  const features = new Set();
+  const nonzeroFeatures = new Set();
+  const sampleAbs = new Map();
+  const lagTotals = new Map();
+  const lagCounts = new Map();
+  let currentSample = null;
+  let currentLag = null;
+  let currentLagAbs = 0;
+  let rowCount = 0;
+  let totalAbs = 0;
+  let peakAbs = 0;
+
+  function flushLag() {
+    if (currentLag === null) {
+      return;
+    }
+
+    lagTotals.set(currentLag, (lagTotals.get(currentLag) ?? 0) + currentLagAbs);
+    lagCounts.set(currentLag, (lagCounts.get(currentLag) ?? 0) + 1);
+  }
+
+  await streamCsvRows(filePath, (row) => {
+    const sampleId = Number(row.sample_id);
+    const lagDay = Number(row.timestep) + 1;
+    const shapValue = Number(row.shap_value);
+    const absValue = Math.abs(shapValue);
+
+    if (currentSample !== null && (sampleId !== currentSample || lagDay !== currentLag)) {
+      flushLag();
+      currentLagAbs = 0;
+    }
+
+    currentSample = sampleId;
+    currentLag = lagDay;
+
+    rowCount += 1;
+    totalAbs += absValue;
+    peakAbs = Math.max(peakAbs, absValue);
+    features.add(row.feature);
+    if (absValue > 0) {
+      nonzeroFeatures.add(row.feature);
+    }
+
+    currentLagAbs += absValue;
+    sampleAbs.set(sampleId, (sampleAbs.get(sampleId) ?? 0) + absValue);
+  });
+  flushLag();
+
+  const lagImportanceRows = Array.from(lagTotals.entries())
+    .map(([lagDay, importance]) => ({
+      importance: importance / Math.max(lagCounts.get(lagDay) ?? 1, 1),
+      lagDay,
+    }))
+    .sort((left, right) => left.lagDay - right.lagDay);
+  const sampleAbsValues = Array.from(sampleAbs.values());
+  const peakLag =
+    lagImportanceRows.reduce(
+      (best, current) =>
+        current.importance > best.importance ? current : best,
+      lagImportanceRows[0] ?? { importance: 0, lagDay: 1 },
+    ).lagDay;
+
+  return {
+    featureCount: features.size,
+    features: Array.from(features).sort(),
+    lagImportanceRows,
+    lookback: String(lookback.days),
+    lookbackLabel: lookback.label,
+    meanAbsShap: totalAbs / Math.max(rowCount, 1),
+    meanSampleAbs: average(sampleAbsValues),
+    model,
+    nonzeroFeatureCount: nonzeroFeatures.size,
+    nonzeroFeatures: Array.from(nonzeroFeatures).sort(),
+    peakAbsShap: peakAbs,
+    peakLag,
+    peakSampleAbs: Math.max(...sampleAbsValues),
+    samples: sampleAbs.size,
+    timesteps: lagImportanceRows.length,
+  };
+}
+
+async function buildLinearFocusBundle(lookbackLabel, model) {
+  const filePath = join(rawDir, "shap_results", lookbackLabel, `${model}_shap_values.csv`);
+  const sampleSignal = new Map();
+  const sampleLagSignal = new Map();
+  const lagTotals = new Map();
+  const lagCounts = new Map();
+  let currentSample = null;
+  let currentLag = null;
+  let currentLagSigned = 0;
+  let currentLagAbs = 0;
+
+  function flushLag() {
+    if (currentLag === null || currentSample === null) {
+      return;
+    }
+
+    lagTotals.set(currentLag, (lagTotals.get(currentLag) ?? 0) + currentLagAbs);
+    lagCounts.set(currentLag, (lagCounts.get(currentLag) ?? 0) + 1);
+
+    if (!sampleLagSignal.has(currentSample)) {
+      sampleLagSignal.set(currentSample, new Map());
+    }
+
+    sampleLagSignal.get(currentSample).set(currentLag, currentLagSigned);
+  }
+
+  await streamCsvRows(filePath, (row) => {
+    const sampleId = Number(row.sample_id);
+    const lagDay = Number(row.timestep) + 1;
+    const shapValue = Number(row.shap_value);
+    const absValue = Math.abs(shapValue);
+
+    if (currentSample !== null && (sampleId !== currentSample || lagDay !== currentLag)) {
+      flushLag();
+      currentLagSigned = 0;
+      currentLagAbs = 0;
+    }
+
+    currentSample = sampleId;
+    currentLag = lagDay;
+    currentLagSigned += shapValue;
+    currentLagAbs += absValue;
+    sampleSignal.set(sampleId, (sampleSignal.get(sampleId) ?? 0) + shapValue);
+  });
+  flushLag();
+
+  return {
+    lagImportanceRows: Array.from(lagTotals.entries())
+      .map(([lagDay, importance]) => ({
+        importance: importance / Math.max(lagCounts.get(lagDay) ?? 1, 1),
+        lagDay,
+      }))
+      .sort((left, right) => left.lagDay - right.lagDay),
+    lookbackLabel,
+    model,
+    sampleLagSignal,
+    sampleSignal,
+  };
+}
+
+function buildLinearLookbackSummary(summaries) {
+  return summaries.map((summary) => ({
+    lookback: summary.lookback,
+    mean_abs_shap: formatNumber(summary.meanAbsShap),
+    mean_sample_abs: formatNumber(summary.meanSampleAbs),
+    model: summary.model,
+    peak_abs_shap: formatNumber(summary.peakAbsShap),
+    peak_sample_abs: formatNumber(summary.peakSampleAbs),
+  }));
+}
+
+function buildLinearModelMetrics(summaries, focusLookback) {
+  return summaries
+    .filter((summary) => summary.lookbackLabel === focusLookback)
+    .map((summary) => ({
+      mean_abs_shap: formatNumber(summary.meanAbsShap),
+      mean_sample_abs: formatNumber(summary.meanSampleAbs),
+      model: summary.model,
+      peak_abs_shap: formatNumber(summary.peakAbsShap),
+      peak_sample_abs: formatNumber(summary.peakSampleAbs),
+    }));
+}
+
+function buildLinearAttributionTrace(focusBundles) {
+  const rows = [];
+  const allSampleIds = Array.from(
+    new Set(
+      focusBundles.flatMap((bundle) => Array.from(bundle.sampleSignal.keys())),
+    ),
+  ).sort((left, right) => left - right);
+
+  allSampleIds.forEach((sampleId) => {
+    const bundleValues = focusBundles.map(
+      (bundle) => bundle.sampleSignal.get(sampleId) ?? 0,
+    );
+
+    focusBundles.forEach((bundle) => {
+      rows.push({
+        sample: String(sampleId + 1),
+        series: bundle.model,
+        signal: formatNumber(bundle.sampleSignal.get(sampleId) ?? 0),
+      });
+    });
+
+    rows.push({
+      sample: String(sampleId + 1),
+      series: "Family average",
+      signal: formatNumber(average(bundleValues)),
+    });
+  });
+
+  return rows;
+}
+
+function buildLinearLocalShap(focusModelBundle) {
+  const sampleEntries = Array.from(focusModelBundle.sampleSignal.entries());
+  const bullishSample = sampleEntries.reduce((best, current) =>
+    current[1] > best[1] ? current : best,
+  );
+  const bearishSample = sampleEntries.reduce((best, current) =>
+    current[1] < best[1] ? current : best,
+  );
+
+  return [
+    ...formatLocalSampleRows(focusModelBundle, bullishSample[0], "Bullish sample"),
+    ...formatLocalSampleRows(focusModelBundle, bearishSample[0], "Bearish sample"),
+  ];
+}
+
+function formatLocalSampleRows(bundle, sampleId, caseLabel) {
+  const lagMap = bundle.sampleLagSignal.get(sampleId) ?? new Map();
+
+  return Array.from(lagMap.entries())
+    .map(([lagDay, contribution]) => ({
+      contribution,
+      feature: `return_1d · lag ${lagDay}`,
+    }))
+    .sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution))
+    .slice(0, 10)
+    .map((entry) => ({
+      case: caseLabel,
+      contribution: formatNumber(entry.contribution),
+      feature: entry.feature,
+    }));
+}
+
+function buildLinearLagImportance(focusBundles) {
+  return focusBundles.flatMap((bundle) =>
+    bundle.lagImportanceRows.map((row) => ({
+      importance: formatNumber(row.importance),
+      lag_day: String(row.lagDay),
+      model: bundle.model,
+    })),
+  );
+}
+
+function buildLinearFeatureImportance(summaries) {
+  return summaries
+    .flatMap((summary) =>
+      summary.lagImportanceRows.map((row) => ({
+        feature: `${summary.model} · ${summary.lookbackLabel} · L${row.lagDay}`,
+        importance: row.importance,
+      })),
+    )
+    .sort((left, right) => right.importance - left.importance)
+    .slice(0, 10)
+    .map((row) => ({
+      feature: row.feature,
+      importance: formatNumber(row.importance),
+    }));
+}
+
+function buildLinearGoldAudit(summaries) {
+  return LINEAR_MODELS.flatMap((model) => {
+    const modelSummaries = summaries.filter((summary) => summary.model === model);
+    const availableFeatures = new Set(
+      modelSummaries.flatMap((summary) => summary.features),
+    );
+    const activeFeatures = new Set(
+      modelSummaries.flatMap((summary) => summary.nonzeroFeatures),
+    );
+
+    return LINEAR_FEATURE_GROUPS.map((group) => {
+      let status = 0;
+
+      if (group.features.some((feature) => availableFeatures.has(feature))) {
+        status = 1;
+      }
+
+      if (group.features.some((feature) => activeFeatures.has(feature))) {
+        status = 2;
+      }
+
+      return {
+        feature: group.label,
+        model,
+        status: String(status),
+      };
+    });
   });
 }
 
@@ -356,6 +757,44 @@ function buildTreeGoldSummary(shapByModel) {
   });
 }
 
+function buildMonthEndSeries(rows) {
+  const monthly = new Map();
+  const sorted = rows
+    .filter((row) => Number.isFinite(row.value) && row.date)
+    .sort((left, right) => left.date.localeCompare(right.date));
+
+  sorted.forEach((row) => {
+    monthly.set(row.date.slice(0, 7), {
+      date: row.date.slice(0, 7),
+      value: row.value,
+    });
+  });
+
+  return Array.from(monthly.values());
+}
+
+function formatIndexedSeries(series, rows) {
+  if (!rows.length) {
+    return [];
+  }
+
+  const baseValue = rows[0].value;
+  return rows.map((row) => ({
+    date: row.date,
+    index_value: formatNumber((row.value / baseValue) * 100),
+    series,
+  }));
+}
+
+function parseImportedQuoteFile(filePath) {
+  return parseCsvFile(filePath)
+    .map((row) => ({
+      date: normalizeImportedDate(row["Ngày"]),
+      value: parseImportedNumber(row["Lần cuối"]),
+    }))
+    .filter((row) => row.date && Number.isFinite(row.value));
+}
+
 function rankFeatures(rows) {
   const features = Object.keys(rows[0]).filter((feature) => feature !== "sample_index");
 
@@ -371,6 +810,27 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
 }
 
+function normalizeImportedDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) {
+    return "";
+  }
+
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function parseImportedNumber(value) {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  return Number(String(value).replaceAll(",", "").trim());
+}
+
 function formatNumber(value) {
   return Number(value).toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
 }
@@ -378,7 +838,7 @@ function formatNumber(value) {
 function parseCsvFile(filePath) {
   const contents = readFileSync(filePath, "utf8").trim();
   const [headerLine, ...lines] = contents.split(/\r?\n/);
-  const headers = parseCsvLine(headerLine);
+  const headers = parseCsvLine(headerLine).map(stripBom);
 
   return lines
     .filter(Boolean)
@@ -440,4 +900,33 @@ function writeCsv(filePath, rows, headers) {
   });
 
   writeFileSync(filePath, `${lines.join("\n")}\n`, "utf8");
+}
+
+async function streamCsvRows(filePath, onRow) {
+  const lineReader = createInterface({
+    crlfDelay: Infinity,
+    input: createReadStream(filePath, { encoding: "utf8" }),
+  });
+  let headers = null;
+
+  for await (const line of lineReader) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    if (!headers) {
+      headers = parseCsvLine(line).map(stripBom);
+      continue;
+    }
+
+    const values = parseCsvLine(line);
+    const row = Object.fromEntries(
+      headers.map((header, index) => [header, values[index] ?? ""]),
+    );
+    onRow(row);
+  }
+}
+
+function stripBom(value) {
+  return value.replace(/^\uFEFF/, "");
 }

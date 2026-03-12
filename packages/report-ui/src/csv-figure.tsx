@@ -168,11 +168,11 @@ export function CsvFigure({
   const plotHeight = height - margin.top - margin.bottom;
   const xIsNumeric = numericColumns.includes(currentX);
   const seriesNames = currentColor ? uniqueValues(rows, currentColor) : [];
-  const visibleSeries =
-    currentColor && activeSeries !== ALL_SERIES ? [activeSeries] : seriesNames;
+  const focusedSeries = currentColor && activeSeries !== ALL_SERIES ? activeSeries : null;
+  const visibleSeries = seriesNames;
   const xCategories = uniqueValues(rows, currentX);
   const filteredRows =
-    currentColor && activeSeries !== ALL_SERIES
+    currentView === "bar" && currentColor && activeSeries !== ALL_SERIES
       ? rows.filter((row) => row[currentColor] === activeSeries)
       : rows;
 
@@ -247,12 +247,13 @@ export function CsvFigure({
 
     return {
       color: palette[index % palette.length],
+      isFocused: !focusedSeries || seriesName === focusedSeries,
       name: seriesName,
       points,
     };
   });
 
-  const scatterPoints = filteredRows
+  const scatterPoints = rows
     .map((row) => {
       const xValue = toNumber(row[currentX]);
       const yValue = toNumber(row[currentY]);
@@ -266,6 +267,8 @@ export function CsvFigure({
           currentColor && row[currentColor]
             ? palette[seriesNames.indexOf(row[currentColor]) % palette.length]
             : palette[0],
+        isFocused:
+          !focusedSeries || !currentColor || row[currentColor] === focusedSeries,
         row,
         xValue,
         yValue,
@@ -392,9 +395,12 @@ export function CsvFigure({
 
           {currentView === "line"
             ? lineSeries.map((series) => (
-                <g key={series.name}>
+                <g
+                  className={`csv-series${series.isFocused ? " is-focused" : " is-muted"}`}
+                  key={series.name}
+                >
                   <path
-                    className="csv-line"
+                    className={`csv-line${series.isFocused ? " is-focused" : " is-muted"}`}
                     d={series.points
                       .map((point, index) => {
                         const x = getXPosition({
@@ -415,7 +421,10 @@ export function CsvFigure({
                         return `${index === 0 ? "M" : "L"} ${x} ${y}`;
                       })
                       .join(" ")}
-                    style={{ stroke: series.color, strokeWidth: lineWidth }}
+                    style={{
+                      stroke: series.isFocused ? series.color : "rgba(142, 142, 142, 0.82)",
+                      strokeWidth: series.isFocused ? lineWidth + 0.2 : Math.max(lineWidth - 0.2, 1.2),
+                    }}
                   />
                   {showPoints
                     ? series.points.map((point) => {
@@ -438,14 +447,18 @@ export function CsvFigure({
                         return (
                           <circle
                             aria-label={`${point.xLabel}, ${currentY}: ${point.yValue}`}
-                            className={`csv-point${isActive ? " is-active" : ""}`}
+                            className={`csv-point${isActive ? " is-active" : ""}${
+                              series.isFocused ? " is-focused" : " is-muted"
+                            }`}
                             cx={x}
                             cy={y}
                             key={`${series.name}-${point.xLabel}-${point.yValue}`}
                             onFocus={() => setInspectedRow(point.row)}
                             onMouseEnter={() => setInspectedRow(point.row)}
                             r={isActive ? activePointRadius : pointRadius}
-                            style={{ fill: series.color }}
+                            style={{
+                              fill: series.isFocused ? series.color : "rgba(154, 154, 154, 0.82)",
+                            }}
                             tabIndex={0}
                           />
                         );
@@ -469,14 +482,18 @@ export function CsvFigure({
                 return (
                   <circle
                     aria-label={`${point.row[currentX]}, ${currentY}: ${point.yValue}`}
-                    className={`csv-point${isActive ? " is-active" : ""}`}
+                    className={`csv-point${isActive ? " is-active" : ""}${
+                      point.isFocused ? " is-focused" : " is-muted"
+                    }`}
                     cx={x}
                     cy={y}
                     key={index}
                     onFocus={() => setInspectedRow(point.row)}
                     onMouseEnter={() => setInspectedRow(point.row)}
                     r={isActive ? activePointRadius : pointRadius}
-                    style={{ fill: point.color }}
+                    style={{
+                      fill: point.isFocused ? point.color : "rgba(154, 154, 154, 0.82)",
+                    }}
                     tabIndex={0}
                   />
                 );

@@ -31,14 +31,15 @@ export function ReportArticle() {
           <InlineCitation item={citationItems[0]} />
         </p>
         <p>
-          The current workspace contains both of those strands. The authored
-          report bundle preserves the main <strong>Linear / DLinear / NLinear</strong>{" "}
-          study and its <strong>DeepExplainer</strong> outputs, while the raw
+          The current workspace contains both of those strands. The linear side
+          now comes directly from the raw <strong>DeepExplainer</strong> export
+          folders for <strong>Linear / DLinear / NLinear</strong>, while the
           banking-and-gold notebook exports add <strong>RandomForest</strong>,{" "}
-          <strong>XGBoost</strong>, and <strong>LightGBM</strong> baselines with{" "}
-          <strong>TreeExplainer</strong>. Bringing the two families together
-          creates a fuller picture, but only if the article keeps their evidence
-          streams separate rather than flattening them into one metric table.
+          <strong>XGBoost</strong>, and <strong>LightGBM</strong> baselines
+          interpreted through <strong>TreeExplainer</strong>. Bringing the two
+          families together creates a fuller picture, but only if the article
+          keeps their evidence streams separate rather than flattening them into
+          one metric table.
           <InlineCitation item={citationItems[1]} />
         </p>
         <p>
@@ -65,19 +66,20 @@ export function ReportArticle() {
       </ArticleSection>
 
       <FigureFrame
-        caption="Both series are rebased to 100 at the first available month. The chart is used as a shared context view only: it sits before the report splits into linear-family and tree-family evidence."
+        caption="The chart overlays the banking basket, the five constituent bank price series, and gold. Every line is rebased to 100 at the first shared month so relative movement stays comparable before the article splits into linear-family and tree-family evidence."
         label="Shared data"
         lane="screen"
-        title="The available workspace already combines a rebased stock basket and an exported gold proxy."
+        title="The available workspace now combines the banking basket, its five constituent banks, and gold in one shared market view."
       >
         <CsvFigure
           chartConfig={{
             height: 440,
-            lineWidth: 2.2,
+            lineWidth: 2,
             maxXTicks: 10,
             maxYTicks: 5,
-            pointRadius: 2.6,
+            pointRadius: 2.2,
             rotateXLabels: false,
+            showPoints: false,
             width: 980,
             xTickFormat: "ym",
           }}
@@ -189,9 +191,10 @@ export function ReportArticle() {
       >
         <p>
           The <strong>linear family</strong> consists of Linear, DLinear, and
-          NLinear. Their exported figures remain framed as the main forecasting
-          study, which is why they carry lookback selection, prediction traces,
-          and gold-ablation results.
+          NLinear. The raw export gives four DeepExplainer history windows for
+          each model, so the linear-family figures below are rebuilt around
+          explanation structure: window summaries, sample-level signed traces,
+          local lag decompositions, and lag rankings.
         </p>
         <p>
           The <strong>tree family</strong> consists of RandomForest, XGBoost,
@@ -210,16 +213,16 @@ export function ReportArticle() {
       </ArticleSection>
 
       <FigureFrame
-        caption="The linear family remains the primary forecasting track. The metric selector can switch between RMSE, MAE, and MAPE without mixing these values with the tree-baseline scale."
+        caption="These bars summarize the strongest normalized DeepExplainer window rather than forecast RMSE. The selector switches between mean sample |SHAP|, peak cell |SHAP|, and normalized mean |SHAP| so the three linear models can still be compared on one axis."
         label="Linear family"
         lane="body"
-        title="Linear, DLinear, and NLinear are evaluated together as the main forecasting family."
+        title="Within the most concentrated DeepExplainer window, NLinear carries the strongest attribution signal."
       >
         <CsvFigure
           controls={["y"]}
           defaultView="bar"
           defaultX="model"
-          defaultY="rmse"
+          defaultY="mean_sample_abs"
           showLegend={false}
           src="/data/linear-model-metrics.csv"
         />
@@ -242,25 +245,27 @@ export function ReportArticle() {
       </FigureFrame>
 
       <FigureFrame
-        caption="The linear-family trace is kept intact from the authored report bundle. It remains useful because it shows how the main study presents actual-versus-forecast movement rather than summary error alone."
+        caption="Each line is the signed SHAP sum across all lags and features for one explained sample in the 7-day linear bundle. The family-average trace is added as a reference so the shared turning points stay visible."
         label="Linear family"
         lane="screen"
-        title="The sequence-model track still includes an explicit prediction trace against the observed path."
+        title="The sample-wise attribution trace shows where the three linear models turn bullish or bearish."
       >
         <CsvFigure
           chartConfig={{
             height: 430,
-            maxXTicks: 12,
+            lineWidth: 2.1,
+            maxXTicks: 8,
             maxYTicks: 5,
-            pointRadius: 3.2,
+            pointRadius: 2.6,
             rotateXLabels: false,
+            showPoints: false,
             width: 980,
           }}
           controls={[]}
           defaultColor="series"
           defaultView="line"
-          defaultX="day"
-          defaultY="price"
+          defaultX="sample"
+          defaultY="signal"
           showLegend
           src="/data/linear-prediction-trace.csv"
         />
@@ -272,42 +277,42 @@ export function ReportArticle() {
         lede="The linear family keeps the original interpretability frame: DeepExplainer is used to open the model, compare lookback choices, and summarize both local and global attribution patterns."
       >
         <p>
-          In the sequence-model track, the report still centers the explanatory
-          analysis on the linear-family results bundle. The lookback curve is
-          used to justify the selected configuration, the local explanation
-          contrasts bullish and bearish samples, and the lag summary makes the
-          temporal shape of the forecast explicit.
+          In the rebuilt sequence-model track, the explanatory analysis now
+          starts from the four saved DeepExplainer window bundles themselves.
+          The first comparison asks which history window concentrates the most
+          normalized attribution mass, then the later plots zoom into the
+          7-day bundle where that concentration is strongest.
         </p>
         <p>
-          This section deliberately remains faithful to the authored linear
-          study: the point is not to replace DeepExplainer, but to keep it as
-          one half of the dual-family story and then read TreeExplainer beside
-          it rather than instead of it.
+          That makes the linear side more honest: instead of relying on hidden
+          placeholder validation tables, this section stays with the DeepExplainer
+          artifacts that are actually saved to disk, including local sample
+          decompositions and lag-level importance curves.
         </p>
       </ArticleSection>
 
       <FigureFrame
-        caption="The validation curve is kept exactly in the linear-family track because it is the result-bundle artifact that determines which lookback window later receives the detailed DeepExplainer treatment."
+        caption="The selector compares four raw DeepExplainer windows across the three linear models. Normalized mean |SHAP| is the fairest default because it compares windows of very different lengths without rewarding them merely for having more lags."
         label="Linear family"
         lane="page"
-        title="The main sequence-model study still selects its lookback window before explanation."
+        title="The raw linear export spans four history windows, and the 7-day bundle is the most concentrated."
       >
         <CsvFigure
           controls={["y"]}
           defaultColor="model"
           defaultView="line"
           defaultX="lookback"
-          defaultY="rmse"
+          defaultY="mean_abs_shap"
           showLegend
           src="/data/linear-lookback-validation.csv"
         />
       </FigureFrame>
 
       <FigureFrame
-        caption="The ranked bars preserve the original DeepExplainer local-view idea, but the interaction is cleaner here because the bullish and bearish cases are switched explicitly rather than averaged together."
+        caption="The local view uses the strongest model-window bundle: NLinear with a 7-day history. Each bar is one lag-specific return contribution, so the bullish and bearish samples can be read as explicit temporal stacks rather than as a blended feature list."
         label="Linear family"
         lane="page"
-        title="DeepExplainer makes the local contribution pattern legible one sample at a time."
+        title="DeepExplainer makes the dominant lag contributions legible one sample at a time."
       >
         <RankedBarFigure
           defaultGroup="Bullish sample"
@@ -322,14 +327,14 @@ export function ReportArticle() {
       </FigureFrame>
 
       <FigureFrame
-        caption="Lag importance stays unique to the linear-family explanation track because it summarizes how DeepExplainer attributes a sequence model across the lookback window."
+        caption="These lines come from the same 7-day bundle used for the local view. They average absolute lag contribution across samples so the three linear models can be compared on the same temporal axis."
         label="Linear family"
         lane="page"
-        title="The lag curve shows how temporal importance decays across forecast horizons."
+        title="Within the 7-day bundle, the models agree that only a handful of recent lags dominate."
       >
         <CsvFigure
           controls={[]}
-          defaultColor="horizon"
+          defaultColor="model"
           defaultView="line"
           defaultX="lag_day"
           defaultY="importance"
@@ -339,10 +344,10 @@ export function ReportArticle() {
       </FigureFrame>
 
       <FigureFrame
-        caption="The global DeepExplainer ranking remains the simplest summary for the sequence-model family: it collapses local attribution patterns into one ordered list of recurring drivers."
+        caption="Because the exported linear SHAP tables activate only one raw feature, the global ranking is expressed as model-window-lag combinations rather than as many distinct variables. That still reveals which bundles and lag positions repeatedly concentrate the family’s explanatory mass."
         label="Linear family"
         lane="page"
-        title="The sequence-model family still resolves into a compact global importance ordering."
+        title="Across all linear bundles, a small set of lag positions carries most of the attribution weight."
       >
         <RankedBarFigure
           label="Linear-family feature importance"
@@ -433,18 +438,21 @@ export function ReportArticle() {
       >
         <h3>Using SHAP to identify important features</h3>
         <p>
-          The linear family emphasizes recent lags and moving-average structure
-          because its explanatory view is built around temporal position as well
-          as feature identity. The tree family strips away that sequence framing
-          and asks a different question: once the same engineered table is fed
-          into nonlinear baselines, which variables still rise to the top?
+          The linear family now speaks almost entirely through temporal
+          position. In the saved DeepExplainer export, only <code>return_1d</code>
+          carries nonzero attribution, so the main question becomes which lags
+          of that return signal dominate each model and history window. The
+          tree family strips away that sequence framing and asks a different
+          question: once the same engineered table is fed into nonlinear
+          baselines, which variables still rise to the top?
         </p>
         <p>
-          Across the current exports, the answer is not random. Short- and
-          medium-horizon return features remain central, volatility stays
-          visible, and the gold signal rarely disappears entirely. That overlap
-          is why the report treats explainability as a cross-family pattern
-          rather than as one model&apos;s anecdote.
+          Across the current exports, the answer is still not random. Return
+          information dominates both families, but the tree models keep a wider
+          surrounding cast of volatility, volume, and gold features visible,
+          while the linear export collapses to a much narrower single-feature
+          story. That contrast is why the report treats explainability as a
+          cross-family pattern rather than as one model&apos;s anecdote.
         </p>
       </ArticleSection>
 
@@ -467,35 +475,32 @@ export function ReportArticle() {
       <section className="article-section l-body">
         <h3>Can gold price be used as an indicator?</h3>
         <p>
-          The current workspace gives two different answers, and both are worth
-          keeping. In the linear family, the authored ablation figure shows a
-          modest but consistent improvement when gold is included. In the tree
-          family, gold is evaluated through SHAP rank and sign balance rather
-          than through a saved ablation run.
+          The current workspace gives one direct answer and one audit. In the
+          tree family, gold is evaluated through SHAP rank and sign balance. In
+          the raw linear DeepExplainer export, gold is not present in the saved
+          feature set at all, so the linear side can only answer by showing that
+          absence explicitly.
         </p>
         <p>
-          Taken together, that supports a balanced interpretation: gold is not
-          the dominant driver in either family, but it remains too visible to be
-          dismissed as irrelevant noise. The two figures below are deliberately
-          separate because they answer the question in different explanatory
-          languages.
+          Taken together, that yields a narrower but cleaner interpretation. The
+          current linear bundle cannot support a gold claim because the variable
+          never enters the saved DeepExplainer tensors, while the tree family
+          shows that gold is secondary but nonzero once it is actually present.
         </p>
       </section>
 
       <FigureFrame
-        caption="The linear-family bundle already contains an explicit with-gold versus without-gold comparison. It remains the clearest direct answer for the main FPT-style track."
+        caption="Status 2 means present and active in SHAP, 1 means present but zero throughout the saved export, and 0 means absent. Gold is absent across all three linear models, while only return_1d receives nonzero attribution."
         label="Linear family"
         lane="page"
-        title="Within the sequence-model family, adding gold remains a modest but repeatable improvement."
+        title="Within the saved linear export, gold is absent rather than merely weak."
       >
-        <CsvFigure
-          controls={["y"]}
-          defaultColor="scenario"
-          defaultView="line"
-          defaultX="model"
-          defaultY="rmse"
-          showLegend
+        <HeatmapFigure
+          label="Linear-family feature audit"
           src="/data/linear-gold-ablation.csv"
+          valueKey="status"
+          xKey="model"
+          yKey="feature"
         />
       </FigureFrame>
 
@@ -522,8 +527,8 @@ export function ReportArticle() {
       >
         <p>
           The combined article now uses everything that is currently available.
-          Shared figures come directly from the exported stock table, the main
-          sequence-model story keeps its DeepExplainer artifacts, and the tree
+          Shared figures come directly from the exported stock table, the linear
+          story is rebuilt directly from raw DeepExplainer windows, and the tree
           family adds a real TreeExplainer baseline without pretending to live
           on the same error scale.
         </p>

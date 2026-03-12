@@ -17,7 +17,7 @@ export const reportMeta: ReportMeta = {
   supervisor: "Dr. Dinh Hai Dung",
   published: "Mar. 11, 2026",
   abstract:
-    "This report keeps the FPT-focused presentation, but the current workspace now exposes two complementary evidence streams: linear-family report exports already prepared for the main study, and tree-based baseline exports rebuilt from the banking-and-gold notebook in the repository. The article therefore separates shared data figures, DeepExplainer results for Linear, DLinear, and NLinear, and TreeExplainer baselines for RandomForest, XGBoost, and LightGBM.",
+    "This report keeps the FPT-focused presentation, but the current workspace now exposes two complementary evidence streams: raw DeepExplainer window exports for Linear, DLinear, and NLinear, and tree-based baseline exports rebuilt from the banking-and-gold notebook in the repository. The article therefore separates shared data figures, DeepExplainer results for the linear family, and TreeExplainer baselines for RandomForest, XGBoost, and LightGBM.",
   toc: [
     { id: "introduction", label: "Introduction" },
     { id: "data-features", label: "Data and Feature Engineering" },
@@ -43,9 +43,9 @@ export const footnoteItems: FootnoteItem[] = [
 
 export const sourceItems: SourceItem[] = [
   {
-    title: "Linear-family report exports",
+    title: "Linear-family DeepExplainer exports",
     detail:
-      "The Linear, DLinear, and NLinear figures come from the current CSV bundle in apps/web/public/data.",
+      "The Linear, DLinear, and NLinear figures are rebuilt from apps/web/public/data/raw/shap_results rather than copied from the earlier mock CSV bundle.",
   },
   {
     title: "Banking-and-gold notebook exports",
